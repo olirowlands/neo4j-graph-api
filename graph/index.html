@@ -12,16 +12,10 @@
     header { padding:14px 16px; background:var(--card); display:flex; gap:12px; align-items:center;
       position:sticky; top:0; z-index:1; border-bottom:1px solid #2b3242; }
     header h1 { font-size:16px; margin:0 8px 0 0; letter-spacing:.2px; color:white; }
-    label { color:var(--muted); font-size:12px; }
-    input[type="range"] { width:160px; }
     #viz { height: calc(100vh - 64px); }
-    .pill { background:#222834; border:1px solid #2b3242; border-radius:999px;
-      padding:6px 10px; display:flex; align-items:center; gap:8px; }
-    .legend { display:flex; gap:10px; align-items:center; margin-left:auto; }
+    .legend { display:flex; gap:10px; align-items:center; margin-left:auto; color:white; }
     .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
-    a.btn { color:var(--text); text-decoration:none; border:1px solid #2b3242; padding:6px 10px;
-      border-radius:8px; background:#1a202c; }
-  
+    .legend small { color:white; font-size:12px; font-weight:500; }
     @font-face {
         font-family: "Inter";
         font-style: normal;
@@ -30,7 +24,6 @@
         src: url(https://www.thetechcovenant.com/assets/fonts/inter-roman.woff2?v=fb6b75b985) format("woff2");
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
     }
-
   </style>
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
@@ -38,9 +31,12 @@
   <div class="wrap">
     <header>
       <h1>Philosophy Graph</h1>
-<div class="legend" style="color:white;">
-        <span class="dot" style="background:#1976d2"></span><small style="color:white;">PHILOSOPHY</small>
-        <span class="dot" style="background:#43a047"></span><small style="color:white;">DOGMA</small>
+
+      <div class="legend">
+        <span class="dot" style="background:#1976d2"></span>
+        <small>PHILOSOPHY</small>
+        <span class="dot" style="background:#43a047"></span>
+        <small>DOGMA</small>
       </div>
     </header>
 
@@ -49,11 +45,8 @@
 
   <script>
     (function () {
-      const endpoint = "/api/graph"; // same-origin: no CORS headaches
+      const endpoint = "/api/graph";
       const el = document.getElementById('viz');
-      const limitInput = document.getElementById('limit');
-      const limitVal = document.getElementById('limitVal');
-      const physicsToggle = document.getElementById('physics');
 
       const labelColor = { PHILOSOPHY:"#1976d2", DOGMA:"#43a047" };
 
@@ -68,7 +61,7 @@
         const res = await fetch(endpoint + `?limit=${limit}`);
         const payload = await res.json();
 
-        // Parse Neo4j Query API v2 rows: [n, r, m]
+        // Parse Neo4j rows: [n, r, m]
         const rows = payload?.data?.values || [];
         const rawNodes = rows.flatMap(v => [v[0], v[2]]).filter(Boolean);
         const rawEdges = rows.map(v => v[1]).filter(Boolean);
@@ -105,7 +98,7 @@
           {
             nodes: {
               shape: "dot", size: 20, borderWidth: 2,
-              font: { color: "#000000", size: 16, face: "system-ui" }
+              font: { color: "#000000", size: 16, face: "Inter, system-ui" }
             },
             edges: {
               width: 1.5,
@@ -113,22 +106,13 @@
               smooth: { type: "dynamic" }
             },
             interaction: { hover: true, tooltipDelay: 150 },
-            physics: { stabilization: true, enabled: physicsToggle.checked }
+            physics: { stabilization: true, enabled: false }
           }
         );
-
-        physicsToggle.addEventListener("change", () => {
-          network.setOptions({ physics: { enabled: physicsToggle.checked }});
-        });
       }
 
-      limitInput.addEventListener("input", () => {
-        limitVal.textContent = limitInput.value;
-      });
-      limitInput.addEventListener("change", () => load(limitInput.value));
-
-      // initial load
-      load(limitInput.value);
+      // initial load with max limit
+      load(1000);
     })();
   </script>
 </body>
