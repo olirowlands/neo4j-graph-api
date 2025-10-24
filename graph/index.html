@@ -63,6 +63,30 @@
       const labelOf = (obj) =>
         obj?.properties?.title || obj?.properties?.name || (obj?.labels?.[0] || "Node");
 
+      
+      // Build a friendly multiline tooltip for each node
+      function tooltipForNode(n) {
+        const props = n.properties || {};
+        const lines = [];
+
+        if (props.title) {
+          lines.push(`Title: ${props.title}`);
+        }
+        if (props.summary) {
+          lines.push(`Summary: ${props.summary}`);
+        }
+        if (props.notes) {
+          lines.push(`Notes: ${props.notes}`);
+        }
+
+        if (lines.length === 0) {
+          // fallback to dumping keys so it's never empty
+          lines.push(JSON.stringify(props, null, 2));
+        }
+
+        return lines.join("\n");
+      }
+
       async function load(limit) {
         el.innerHTML = "";
         const res = await fetch(endpoint + `?limit=${limit}`);
@@ -79,12 +103,12 @@
           if (!id || nodeMap.has(id)) continue;
           const primary = n.labels?.[0] || "Node";
           nodeMap.set(id, {
-            id,
-            label: labelOf(n),
-            group: primary,
-            title: JSON.stringify(n.properties || {}, null, 2),
-            color: { background: labelColor[primary] || "#d5c7b3", border: "#333" }
-          });
+          id,
+          label: labelOf(n),
+          group: primary,
+          title: tooltipForNode(n),
+          color: { background: labelColor[primary] || "#d5c7b3", border: "#333" }
+        });
         }
 
         const edgeMap = new Map();
