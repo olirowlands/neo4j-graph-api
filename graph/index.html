@@ -227,7 +227,8 @@
               color: {
                 background: labelColor[primary] || "#d5c7b3",
                 border: "#333",
-                highlight: { background: "#d4a44b", border: "#3a3a3a" }
+                highlight: { background: "#d4a44b", border: "#3a3a3a" },
+                hover: { background: "#d4a44b", border: "#3a3a3a" }
               }
             });
           });
@@ -256,7 +257,7 @@
               label: formattedLabel,
               arrows: "to",
               length: 200,
-              color: { color: "#d5c7b3", highlight: "#d4a44b" }
+              color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" }
             });
           });
 
@@ -265,7 +266,7 @@
 
           var network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, {
             nodes: { shape: "dot", size: 20, borderWidth: 2, font: { color: "#000000", size: 16, face: "Inter, system-ui" } },
-            edges: { width: 1.5, color: { color: "#d5c7b3", highlight: "#d4a44b" }, smooth: { type: "dynamic" },
+            edges: { width: 1.5, color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" }, smooth: { type: "dynamic" },
                      font: { multi: "html", face: "Inter", color: "#000000" } },
             interaction: { hover: true, tooltipDelay: 150 },
             physics: { enabled: true, solver: "forceAtlas2Based",
