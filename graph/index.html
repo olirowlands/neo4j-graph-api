@@ -44,129 +44,170 @@
   </div>
 
   <script>
-    (function () {
-      const endpoint = "/api/graph";
-      const el = document.getElementById('viz');
+(function () {
+  const endpoint = "/api/graph";
+  const el = document.getElementById('viz');
 
-      // pastel palette
-      const labelColor = {
-        PHILOSOPHY: "#b4c8a8", // sage green
-        DOGMA: "#e8b7b7",      // dusty rose
-        CONCEPT: "#b8cde2",    // mist blue
-        PRACTICE: "#f3d9a4",   // soft amber
-        RELATION: "#d5c7b3"    // warm taupe
+  // pastel palette
+  const labelColor = {
+    PHILOSOPHY: "#b4c8a8", // sage green
+    DOGMA: "#e8b7b7",      // dusty rose
+    CONCEPT: "#b8cde2",    // mist blue
+    PRACTICE: "#f3d9a4",   // soft amber
+    RELATION: "#d5c7b3"    // warm taupe
+  };
+
+  const toId = (obj) =>
+    obj?.id || obj?.identity || obj?.elementId || obj?.properties?.id || null;
+
+  const labelOf = (obj) =>
+    obj?.properties?.title ||
+    obj?.properties?.name ||
+    (obj?.labels?.[0] || "Node");
+
+  // Tooltip helper (with fallback)
+  function tooltipForNode(n) {
+    const props = n.properties || {};
+    const lines = [];
+
+    if (props.title) {
+      lines.push(`Title: ${props.title}`);
+    }
+    if (props.summary) {
+      lines.push(`Summary: ${props.summary}`);
+    }
+    if (props.notes) {
+      lines.push(`Notes: ${props.notes}`);
+    }
+
+    if (lines.length === 0) {
+      const raw = JSON.stringify(props, null, 2);
+      if (raw && raw !== "{}") {
+        lines.push(raw);
+      } else {
+        lines.push("No details");
+      }
+    }
+
+    return lines.join("\n");
+  }
+
+  async function load(limit) {
+    el.innerHTML = "";
+
+    const res = await fetch(endpoint + `?limit=${limit}`);
+    const payload = await res.json();
+
+    console.log("[API payload]", payload);
+
+    // Expecting Neo4j rows like: [n, r, m]
+    const rows = payload?.data?.values || [];
+    console.log("[rows]", rows);
+
+    const rawNodes = rows.flatMap(v => [v[0], v[2]]).filter(Boolean);
+    const rawEdges = rows.map(v => v[1]).filter(Boolean);
+
+    console.log("[rawNodes]", rawNodes);
+    console.log("[rawEdges]", rawEdges);
+
+    const nodeMap = new Map();
+    for (const n of rawNodes) {
+      const id = toId(n);
+      if (!id || nodeMap.has(id)) continue;
+      const primary = n.labels?.[0] || "Node";
+
+      const nodeObj = {
+        id,
+        label: labelOf(n),
+        group: primary,
+        title: tooltipForNode(n), // tooltip content
+        color: {
+          background: labelColor[primary] || "#d5c7b3",
+          border: "#333"
+        }
       };
 
-      const toId = (obj) =>
-        obj?.id || obj?.identity || obj?.elementId || obj?.properties?.id || null;
+      nodeMap.set(id, nodeObj);
+    }
 
-      const labelOf = (obj) =>
-        obj?.properties?.title || obj?.properties?.name || (obj?.labels?.[0] || "Node");
+    const edgeMap = new Map();
+    for (const e of rawEdges) {
+      const id = toId(e);
+      const from = e.startNodeElementId || e.start || e.from;
+      const to   = e.endNodeElementId   || e.end   || e.to;
+      if (!id || !from || !to || edgeMap.has(id)) continue;
 
-      
-      // Build a friendly multiline tooltip for each node
-      function tooltipForNode(n) {
-        const props = n.properties || {};
-        const lines = [];
+      const formattedLabel = e.type
+        ? "<i>" + e.type.replace(/_/g, " ")
+                         .toLowerCase()
+                         .replace(/^\w/, c => c.toUpperCase()) + "</i>"
+        : "";
 
-        if (props.title) {
-          lines.push(`Title: ${props.title}`);
-        }
-        if (props.summary) {
-          lines.push(`Summary: ${props.summary}`);
-        }
-        if (props.notes) {
-          lines.push(`Notes: ${props.notes}`);
-        }
+      const edgeObj = {
+        id,
+        from,
+        to,
+        label: formattedLabel,
+        arrows: "to",
+        length: 200,
+        color: { color: "#d5c7b3", highlight: "#d5c7b3" }
+      };
 
-        if (lines.length === 0) {
-          // fallback to dumping keys so it's never empty
-          lines.push(JSON.stringify(props, null, 2));
-        }
+      edgeMap.set(id, edgeObj);
+    }
 
-        return lines.join("\n");
-      }
+    // turn maps into arrays for vis-network
+    const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
+    const visEdges = new vis.DataSet(Array.from(edgeMap.values()));
 
-      async function load(limit) {
-        el.innerHTML = "";
-        const res = await fetch(endpoint + `?limit=${limit}`);
-        const payload = await res.json();
+    console.log("[visNodes]", visNodes.get());
+    console.log("[visEdges]", visEdges.get());
 
-        // Parse Neo4j rows: [n, r, m]
-        const rows = payload?.data?.values || [];
-        const rawNodes = rows.flatMap(v => [v[0], v[2]]).filter(Boolean);
-        const rawEdges = rows.map(v => v[1]).filter(Boolean);
-
-        const nodeMap = new Map();
-        for (const n of rawNodes) {
-          const id = toId(n);
-          if (!id || nodeMap.has(id)) continue;
-          const primary = n.labels?.[0] || "Node";
-          nodeMap.set(id, {
-          id,
-          label: labelOf(n),
-          group: primary,
-          title: tooltipForNode(n),
-          color: { background: labelColor[primary] || "#d5c7b3", border: "#333" }
-        });
-        }
-
-        const edgeMap = new Map();
-        for (const e of rawEdges) {
-          const id = toId(e);
-          const from = e.startNodeElementId || e.start || e.from;
-          const to   = e.endNodeElementId   || e.end   || e.to;
-          if (!id || !from || !to || edgeMap.has(id)) continue;
-          edgeMap.set(id, {
-            id,
-            from,
-            to,
-            label: e.type
-              ? "<i>" + e.type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()) + "</i>"
-              : "",  // formatted label in italics
-            arrows: "to",
-            length: 200, // force a minimum distance between connected nodes
-            color: { color: "#d5c7b3", highlight: "#d5c7b3" }
-          });
-        }
-
-        const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
-        const visEdges = new vis.DataSet(Array.from(edgeMap.values()));
-
-        const network = new vis.Network(
-          el,
-          { nodes: visNodes, edges: visEdges },
-          {
-            nodes: {
-              shape: "dot", size: 20, borderWidth: 2,
-              font: { color: "#000000", size: 16, face: "Inter, system-ui" }
-            },
-            edges: {
-              font: { multi: 'html', face: 'Inter', color: '#000000' },
-              width: 1.5,
-              color: { color: "#d5c7b3", highlight: "#d5c7b3" },
-              smooth: { type: "dynamic" }
-            },
-            interaction: { hover: true, tooltipDelay: 150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
-              stabilization: { iterations: 200 }
-            }
+    const network = new vis.Network(
+      el,
+      { nodes: visNodes, edges: visEdges },
+      {
+        nodes: {
+          shape: "dot",
+          size: 20,
+          borderWidth: 2,
+          font: { color: "#000000", size: 16, face: "Inter, system-ui" }
+        },
+        edges: {
+          width: 1.5,
+          color: { color: "#d5c7b3", highlight: "#d5c7b3" },
+          smooth: { type: "dynamic" },
+          font: {
+            multi: "html",          // allow <i>…</i> in labels
+            face: "Inter",
+            color: "#000000"
           }
-        );
-
-        // turn physics off after stabilization to freeze layout
-        network.once("stabilizationIterationsDone", function () {
-          network.setOptions({ physics: { enabled: false } });
-          network.fit();
-        });
+        },
+        interaction: { hover: true, tooltipDelay: 150 },
+        physics: {
+          enabled: true,
+          solver: "forceAtlas2Based",
+          forceAtlas2Based: {
+            gravitationalConstant: -30,
+            centralGravity: 0.005,
+            springLength: 200,
+            springConstant: 0.05
+          },
+          stabilization: { iterations: 200 }
+        }
       }
+    );
 
-      // initial load with max limit
-      load(1000);
-    })();
-  </script>
+    // after layout settles, freeze / fit
+    network.once("stabilizationIterationsDone", function () {
+      network.setOptions({ physics: { enabled: false } });
+      network.fit();
+    });
+  }
+
+  // initial load
+  load(1000);
+})();
+</script>
 </body>
 </html>
