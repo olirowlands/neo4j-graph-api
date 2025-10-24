@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Philosophy Graph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#0e1116; --card:#161a22; --text:#e6e6e6; --muted:#97a0af; --accent:#ff6f00; }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .wrap { display:grid; grid-template-rows:auto 1fr; height:100%; }
+    header { padding:14px 16px; background:var(--card); display:flex; gap:12px; align-items:center;
+      position:sticky; top:0; z-index:1; border-bottom:1px solid #2b3242; }
+    header h1 { font-size:16px; margin:0 8px 0 0; letter-spacing:.2px; }
+    label { color:var(--muted); font-size:12px; }
+    input[type="range"] { width:160px; }
+    #viz { height: calc(100vh - 64px); }
+    .pill { background:#222834; border:1px solid #2b3242; border-radius:999px;
+      padding:6px 10px; display:flex; align-items:center; gap:8px; }
+    .legend { display:flex; gap:10px; align-items:center; margin-left:auto; }
+    .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+    a.btn { color:var(--text); text-decoration:none; border:1px solid #2b3242; padding:6px 10px;
+      border-radius:8px; background:#1a202c; }
+  </style>
+  <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Philosophy Graph</h1>
+
+      <div class="pill">
+        <label for="limit">Limit</label>
+        <input id="limit" type="range" min="50" max="1000" step="50" value="250">
+        <span id="limitVal">250</span>
+      </div>
+
+      <div class="pill">
+        <label for="physics">Physics</label>
+        <input id="physics" type="checkbox" checked>
+      </div>
+
+      <div class="legend">
+        <span class="dot" style="background:#1976d2"></span><small>PHILOSOPHY</small>
+        <span class="dot" style="background:#43a047"></span><small>DOGMA</small>
+      </div>
+    </header>
+
+    <div id="viz"></div>
+  </div>
+
+  <script>
+    (function () {
+      const endpoint = "/api/graph"; // same-origin: no CORS headaches
+      const el = document.getElementById('viz');
+      const limitInput = document.getElementById('limit');
+      const limitVal = document.getElementById('limitVal');
+      const physicsToggle = document.getElementById('physics');
+
+      const labelColor = { PHILOSOPHY:"#1976d2", DOGMA:"#43a047" };
+
+      const toId = (obj) =>
+        obj?.id || obj?.identity || obj?.elementId || obj?.properties?.id || null;
+
+      const labelOf = (obj) =>
+        obj?.properties?.title || obj?.properties?.name || (obj?.labels?.[0] || "Node");
+
+      async function load(limit) {
+        el.innerHTML = "";
+        const res = await fetch(endpoint + `?limit=${limit}`);
+        const payload = await res.json();
+
+        // Parse Neo4j Query API v2 rows: [n, r, m]
+        const rows = payload?.data?.values || [];
+        const rawNodes = rows.flatMap(v => [v[0], v[2]]).filter(Boolean);
+        const rawEdges = rows.map(v => v[1]).filter(Boolean);
+
+        const nodeMap = new Map();
+        for (const n of rawNodes) {
+          const id = toId(n);
+          if (!id || nodeMap.has(id)) continue;
+          const primary = n.labels?.[0] || "Node";
+          nodeMap.set(id, {
+            id,
+            label: labelOf(n),
+            group: primary,
+            title: JSON.stringify(n.properties || {}, null, 2),
+            color: { background: labelColor[primary] || "#90a4ae", border: "#333" }
+          });
+        }
+
+        const edgeMap = new Map();
+        for (const e of rawEdges) {
+          const id = toId(e);
+          const from = e.startNodeElementId || e.start || e.from;
+          const to   = e.endNodeElementId   || e.end   || e.to;
+          if (!id || !from || !to || edgeMap.has(id)) continue;
+          edgeMap.set(id, { id, from, to, label: e.type, arrows: "to" });
+        }
+
+        const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
+        const visEdges = new vis.DataSet(Array.from(edgeMap.values()));
+
+        const network = new vis.Network(
+          el,
+          { nodes: visNodes, edges: visEdges },
+          {
+            nodes: {
+              shape: "dot", size: 20, borderWidth: 2,
+              font: { color: "#e6e6e6", size: 16, face: "system-ui" }
+            },
+            edges: {
+              width: 1.5,
+              color: { color: "#8b93a6", highlight: "#ff6f00" },
+              smooth: { type: "dynamic" }
+            },
+            interaction: { hover: true, tooltipDelay: 150 },
+            physics: { stabilization: true, enabled: physicsToggle.checked }
+          }
+        );
+
+        physicsToggle.addEventListener("change", () => {
+          network.setOptions({ physics: { enabled: physicsToggle.checked }});
+        });
+      }
+
+      limitInput.addEventListener("input", () => {
+        limitVal.textContent = limitInput.value;
+      });
+      limitInput.addEventListener("change", () => load(limitInput.value));
+
+      // initial load
+      load(limitInput.value);
+    })();
+  </script>
+</body>
+</html>
