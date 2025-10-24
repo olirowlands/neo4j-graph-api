@@ -98,8 +98,8 @@
             from,
             to,
             label: e.type
-              ? e.type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())
-              : "",  // formatted label
+              ? "<i>" + e.type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()) + "</i>"
+              : "",  // formatted label in italics
             arrows: "to",
             length: 200, // force a minimum distance between connected nodes
             color: { color: "#d5c7b3", highlight: "#d5c7b3" }
@@ -118,7 +118,7 @@
               font: { color: "#000000", size: 16, face: "Inter, system-ui" }
             },
             edges: {
-              font: { ital: true }, // edge labels in italics
+              font: { multi: 'html', face: 'Inter', color: '#000000' },
               width: 1.5,
               color: { color: "#d5c7b3", highlight: "#d5c7b3" },
               smooth: { type: "dynamic" }
