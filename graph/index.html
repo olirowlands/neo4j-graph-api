@@ -5,7 +5,6 @@
   <title>Hypomnemata</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Inter via Google Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -17,6 +16,7 @@
       --border:#2b3242;
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
+      --highlight:#d4a44b;
     }
 
     html, body {
@@ -82,7 +82,6 @@
       overflow: hidden;
     }
 
-    /* Full-width dark footer panel */
     #details {
       flex: 0 0 auto;
       background: var(--footer-bg);
@@ -94,7 +93,6 @@
       line-height: 1.5;
     }
 
-    /* Inner container for alignment */
     .details-inner {
       max-width: 960px;
       margin: 0 auto;
@@ -143,7 +141,6 @@
 
     <div id="viz"></div>
 
-    <!-- Full-width footer panel -->
     <section id="details">
       <div class="details-inner">
         <h2 id="details-title">Select a node</h2>
@@ -229,7 +226,8 @@
               _type: nodeType(n),
               color: {
                 background: labelColor[primary] || "#d5c7b3",
-                border: "#333"
+                border: "#333",
+                highlight: { background: "#d4a44b", border: "#3a3a3a" }
               }
             });
           });
@@ -258,54 +256,22 @@
               label: formattedLabel,
               arrows: "to",
               length: 200,
-              color: { color: "#d5c7b3", highlight: "#d5c7b3" }
+              color: { color: "#d5c7b3", highlight: "#d4a44b" }
             });
           });
 
           var visNodes = new vis.DataSet(Array.from(nodeMap.values()));
           var visEdges = new vis.DataSet(Array.from(edgeMap.values()));
 
-          var network = new vis.Network(
-            container,
-            { nodes: visNodes, edges: visEdges },
-            {
-              nodes: {
-                shape: "dot",
-                size: 20,
-                borderWidth: 2,
-                font: {
-                  color: "#000000",
-                  size: 16,
-                  face: "Inter, system-ui"
-                }
-              },
-              edges: {
-                width: 1.5,
-                color: { color: "#d5c7b3", highlight: "#d5c7b3" },
-                smooth: { type: "dynamic" },
-                font: {
-                  multi: "html",
-                  face: "Inter",
-                  color: "#000000"
-                }
-              },
-              interaction: {
-                hover: true,
-                tooltipDelay: 150
-              },
-              physics: {
-                enabled: true,
-                solver: "forceAtlas2Based",
-                forceAtlas2Based: {
-                  gravitationalConstant: -30,
-                  centralGravity: 0.005,
-                  springLength: 200,
-                  springConstant: 0.05
-                },
-                stabilization: { iterations: 200 }
-              }
-            }
-          );
+          var network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, {
+            nodes: { shape: "dot", size: 20, borderWidth: 2, font: { color: "#000000", size: 16, face: "Inter, system-ui" } },
+            edges: { width: 1.5, color: { color: "#d5c7b3", highlight: "#d4a44b" }, smooth: { type: "dynamic" },
+                     font: { multi: "html", face: "Inter", color: "#000000" } },
+            interaction: { hover: true, tooltipDelay: 150 },
+            physics: { enabled: true, solver: "forceAtlas2Based",
+              forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
+              stabilization: { iterations: 200 } }
+          });
 
           network.once("stabilizationIterationsDone", function () {
             network.setOptions({ physics: { enabled: false } });
