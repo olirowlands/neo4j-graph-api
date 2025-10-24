@@ -114,9 +114,18 @@
               smooth: { type: "dynamic" }
             },
             interaction: { hover: true, tooltipDelay: 150 },
-            physics: { stabilization: true, enabled: false }
+            physics: {
+              enabled: true,            // run layout
+              stabilization: { iterations: 200 }
+            }
           }
         );
+
+        // After stabilization, freeze layout and fit nicely
+        network.once("stabilizationIterationsDone", function () {
+          network.setOptions({ physics: { enabled: false } });
+          network.fit({ animation: { duration: 500 } });
+        });
       }
 
       // initial load with max limit
