@@ -68,6 +68,11 @@
   // Tooltip helper (with fallback)
   function tooltipForNode(n) {
     const props = n.properties || {};
+    if (props.description && props.description.trim() !== "") {
+      return props.description;
+    }
+    return "No description available";
+  };
     const lines = [];
 
     if (props.title) {
