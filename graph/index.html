@@ -5,7 +5,7 @@
   <title>Hypomnemata</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Inter via Google Fonts (no CORS issue) -->
+  <!-- Inter via Google Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -74,7 +74,7 @@
 
     #viz {
       flex: 0 0 auto;
-      height: calc(100vh - 56px - 160px); /* footer increased */
+      height: calc(100vh - 56px - 200px);
       min-height: 0;
       position: relative;
       background: transparent;
@@ -82,24 +82,25 @@
       overflow: hidden;
     }
 
-    /* Resized dark footer panel */
+    /* Full-width dark footer panel */
     #details {
       flex: 0 0 auto;
       background: var(--footer-bg);
       color: var(--footer-text);
       border-top: 1px solid #4a4a4a;
       box-shadow: 0 -4px 12px rgba(0,0,0,0.25);
-      padding: 20px 24px;
+      padding: 20px 0 24px;
       font-size: 14px;
       line-height: 1.5;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      height: auto;
-      min-height: 140px;   /* more space for content */
-      max-width: 960px;    /* align with site content */
-      margin: 0 auto;      /* center horizontally */
+    }
+
+    /* Inner container for alignment */
+    .details-inner {
+      max-width: 960px;
+      margin: 0 auto;
       width: 100%;
+      padding: 0 24px;
+      min-height: 140px;
     }
 
     #details h2 {
@@ -142,10 +143,13 @@
 
     <div id="viz"></div>
 
+    <!-- Full-width footer panel -->
     <section id="details">
-      <h2 id="details-title">Select a node</h2>
-      <div class="meta" id="details-type">—</div>
-      <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
+      <div class="details-inner">
+        <h2 id="details-title">Select a node</h2>
+        <div class="meta" id="details-type">—</div>
+        <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
+      </div>
     </section>
   </div>
 
