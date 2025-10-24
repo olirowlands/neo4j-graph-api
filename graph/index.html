@@ -93,8 +93,15 @@
           const from = e.startNodeElementId || e.start || e.from;
           const to   = e.endNodeElementId   || e.end   || e.to;
           if (!id || !from || !to || edgeMap.has(id)) continue;
-          edgeMap.set(id, { id, from, to, label: e.type, arrows: "to",
-            color: { color: "#d5c7b3", highlight: "#d5c7b3" } });
+          edgeMap.set(id, {
+            id,
+            from,
+            to,
+            label: e.type,
+            arrows: "to",
+            length: 200, // force a minimum distance between connected nodes
+            color: { color: "#d5c7b3", highlight: "#d5c7b3" }
+          });
         }
 
         const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
@@ -115,16 +122,18 @@
             },
             interaction: { hover: true, tooltipDelay: 150 },
             physics: {
-              enabled: true,            // run layout
+              enabled: true,
+              solver: "forceAtlas2Based",
+              forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
               stabilization: { iterations: 200 }
             }
           }
         );
 
-        // After stabilization, freeze layout and fit nicely
+        // turn physics off after stabilization to freeze layout
         network.once("stabilizationIterationsDone", function () {
           network.setOptions({ physics: { enabled: false } });
-          network.fit({ animation: { duration: 500 } });
+          network.fit();
         });
       }
 
