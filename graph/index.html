@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Philosophy Graph</title>
+  <title>Hypomnemata</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --bg:#f9f8f5; --card:#3a3a3a; --text:#000000; --muted:#555555; --accent:#ff6f00; }
@@ -30,13 +30,13 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Philosophy Graph</h1>
+      <h1>Hypomnemata</h1>
 
       <div class="legend">
-        <span class="dot" style="background:#1976d2"></span>
-        <small>PHILOSOPHY</small>
-        <span class="dot" style="background:#43a047"></span>
-        <small>DOGMA</small>
+        <span class="dot" style="background:#b4c8a8"></span>
+        <small>Philosophy</small>
+        <span class="dot" style="background:#e8b7b7"></span>
+        <small>Dogma</small>
       </div>
     </header>
 
@@ -48,7 +48,14 @@
       const endpoint = "/api/graph";
       const el = document.getElementById('viz');
 
-      const labelColor = { PHILOSOPHY:"#1976d2", DOGMA:"#43a047" };
+      // pastel palette
+      const labelColor = {
+        PHILOSOPHY: "#b4c8a8", // sage green
+        DOGMA: "#e8b7b7",      // dusty rose
+        CONCEPT: "#b8cde2",    // mist blue
+        PRACTICE: "#f3d9a4",   // soft amber
+        RELATION: "#d5c7b3"    // warm taupe
+      };
 
       const toId = (obj) =>
         obj?.id || obj?.identity || obj?.elementId || obj?.properties?.id || null;
@@ -76,7 +83,7 @@
             label: labelOf(n),
             group: primary,
             title: JSON.stringify(n.properties || {}, null, 2),
-            color: { background: labelColor[primary] || "#90a4ae", border: "#333" }
+            color: { background: labelColor[primary] || "#d5c7b3", border: "#333" }
           });
         }
 
@@ -86,7 +93,8 @@
           const from = e.startNodeElementId || e.start || e.from;
           const to   = e.endNodeElementId   || e.end   || e.to;
           if (!id || !from || !to || edgeMap.has(id)) continue;
-          edgeMap.set(id, { id, from, to, label: e.type, arrows: "to" });
+          edgeMap.set(id, { id, from, to, label: e.type, arrows: "to",
+            color: { color: "#d5c7b3", highlight: "#d5c7b3" } });
         }
 
         const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
@@ -102,7 +110,7 @@
             },
             edges: {
               width: 1.5,
-              color: { color: "#8b93a6", highlight: "#ff6f00" },
+              color: { color: "#d5c7b3", highlight: "#d5c7b3" },
               smooth: { type: "dynamic" }
             },
             interaction: { hover: true, tooltipDelay: 150 },
