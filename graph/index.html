@@ -6,23 +6,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --bg:#f9f8f5; --card:#3a3a3a; --text:#000000; --muted:#555555; --accent:#ff6f00; }
-    html,body { height:100%; margin:0; background:var(--bg); color:var(--text);
-      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    .wrap { display:grid; grid-template-rows:auto 1fr; height:100%; }
-    header { padding:14px 16px; background:var(--card); display:flex; gap:12px; align-items:center;
-      position:sticky; top:0; z-index:1; border-bottom:1px solid #2b3242; }
-    header h1 { font-size:16px; margin:0 8px 0 0; letter-spacing:.2px; color:white; }
-    #viz { height: calc(100vh - 64px); }
-    .legend { display:flex; gap:10px; align-items:center; margin-left:auto; color:white; }
-    .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
-    .legend small { color:white; font-size:12px; font-weight:500; }
+    html,body {
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .wrap {
+      display:grid;
+      grid-template-rows:auto 1fr;
+      height:100%;
+    }
+    header {
+      padding:14px 16px;
+      background:var(--card);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      position:sticky;
+      top:0;
+      z-index:1;
+      border-bottom:1px solid #2b3242;
+    }
+    header h1 {
+      font-size:16px;
+      margin:0 8px 0 0;
+      letter-spacing:.2px;
+      color:white;
+    }
+    #viz {
+      height: calc(100vh - 64px);
+    }
+    .legend {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-left:auto;
+      color:white;
+    }
+    .dot {
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      display:inline-block;
+    }
+    .legend small {
+      color:white;
+      font-size:12px;
+      font-weight:500;
+    }
+
     @font-face {
-        font-family: "Inter";
-        font-style: normal;
-        font-weight: 100 900;
-        font-display: optional;
-        src: url(https://www.thetechcovenant.com/assets/fonts/inter-roman.woff2?v=fb6b75b985) format("woff2");
-        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      font-family: "Inter";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: optional;
+      src: url(https://www.thetechcovenant.com/assets/fonts/inter-roman.woff2?v=fb6b75b985) format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
     }
   </style>
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
@@ -31,7 +72,6 @@
   <div class="wrap">
     <header>
       <h1>Hypomnemata</h1>
-
       <div class="legend">
         <span class="dot" style="background:#b4c8a8"></span>
         <small>Philosophy</small>
@@ -39,180 +79,109 @@
         <small>Dogma</small>
       </div>
     </header>
-
     <div id="viz"></div>
   </div>
 
   <script>
-(function () {
-  const endpoint = "/api/graph";
-  const el = document.getElementById('viz');
+  (function () {
+    var endpoint = "/api/graph";
+    var el = document.getElementById('viz');
 
-  // pastel palette
-  const labelColor = {
-    PHILOSOPHY: "#b4c8a8", // sage green
-    DOGMA: "#e8b7b7",      // dusty rose
-    CONCEPT: "#b8cde2",    // mist blue
-    PRACTICE: "#f3d9a4",   // soft amber
-    RELATION: "#d5c7b3"    // warm taupe
-  };
+    var labelColor = {
+      PHILOSOPHY: "#b4c8a8",
+      DOGMA: "#e8b7b7",
+      CONCEPT: "#b8cde2",
+      PRACTICE: "#f3d9a4",
+      RELATION: "#d5c7b3"
+    };
 
-  const toId = (obj) =>
-    obj?.id || obj?.identity || obj?.elementId || obj?.properties?.id || null;
-
-  const labelOf = (obj) =>
-    obj?.properties?.title ||
-    obj?.properties?.name ||
-    (obj?.labels?.[0] || "Node");
-
-  // Tooltip helper (with fallback)
-  function tooltipForNode(n) {
-    const props = n.properties || {};
-    if (props.description && props.description.trim() !== "") {
-      return props.description;
-    }
-    return "No description available";
-  };
-    const lines = [];
-
-    if (props.title) {
-      lines.push(`Title: ${props.title}`);
-    }
-    if (props.summary) {
-      lines.push(`Summary: ${props.summary}`);
-    }
-    if (props.notes) {
-      lines.push(`Notes: ${props.notes}`);
+    function toId(obj) {
+      return (obj && (obj.id || obj.identity || obj.elementId || (obj.properties && obj.properties.id))) || null;
     }
 
-    if (lines.length === 0) {
-      const raw = JSON.stringify(props, null, 2);
-      if (raw && raw !== "{}") {
-        lines.push(raw);
-      } else {
-        lines.push("No details");
+    function labelOf(obj) {
+      if (obj && obj.properties) {
+        if (obj.properties.title) return obj.properties.title;
+        if (obj.properties.name) return obj.properties.name;
       }
+      if (obj && obj.labels && obj.labels[0]) return obj.labels[0];
+      return "Node";
     }
 
-    return lines.join("\n");
-  }
-
-  async function load(limit) {
-    el.innerHTML = "";
-
-    const res = await fetch(endpoint + `?limit=${limit}`);
-    const payload = await res.json();
-
-    console.log("[API payload]", payload);
-
-    // Expecting Neo4j rows like: [n, r, m]
-    const rows = payload?.data?.values || [];
-    console.log("[rows]", rows);
-
-    const rawNodes = rows.flatMap(v => [v[0], v[2]]).filter(Boolean);
-    const rawEdges = rows.map(v => v[1]).filter(Boolean);
-
-    console.log("[rawNodes]", rawNodes);
-    console.log("[rawEdges]", rawEdges);
-
-    const nodeMap = new Map();
-    for (const n of rawNodes) {
-      const id = toId(n);
-      if (!id || nodeMap.has(id)) continue;
-      const primary = n.labels?.[0] || "Node";
-
-      const nodeObj = {
-        id,
-        label: labelOf(n),
-        group: primary,
-        title: tooltipForNode(n), // tooltip content
-        color: {
-          background: labelColor[primary] || "#d5c7b3",
-          border: "#333"
-        }
-      };
-
-      nodeMap.set(id, nodeObj);
-    }
-
-    const edgeMap = new Map();
-    for (const e of rawEdges) {
-      const id = toId(e);
-      const from = e.startNodeElementId || e.start || e.from;
-      const to   = e.endNodeElementId   || e.end   || e.to;
-      if (!id || !from || !to || edgeMap.has(id)) continue;
-
-      const formattedLabel = e.type
-        ? "<i>" + e.type.replace(/_/g, " ")
-                         .toLowerCase()
-                         .replace(/^\w/, c => c.toUpperCase()) + "</i>"
-        : "";
-
-      const edgeObj = {
-        id,
-        from,
-        to,
-        label: formattedLabel,
-        arrows: "to",
-        length: 200,
-        color: { color: "#d5c7b3", highlight: "#d5c7b3" }
-      };
-
-      edgeMap.set(id, edgeObj);
-    }
-
-    // turn maps into arrays for vis-network
-    const visNodes = new vis.DataSet(Array.from(nodeMap.values()));
-    const visEdges = new vis.DataSet(Array.from(edgeMap.values()));
-
-    console.log("[visNodes]", visNodes.get());
-    console.log("[visEdges]", visEdges.get());
-
-    const network = new vis.Network(
-      el,
-      { nodes: visNodes, edges: visEdges },
-      {
-        nodes: {
-          shape: "dot",
-          size: 20,
-          borderWidth: 2,
-          font: { color: "#000000", size: 16, face: "Inter, system-ui" }
-        },
-        edges: {
-          width: 1.5,
-          color: { color: "#d5c7b3", highlight: "#d5c7b3" },
-          smooth: { type: "dynamic" },
-          font: {
-            multi: "html",          // allow <i>…</i> in labels
-            face: "Inter",
-            color: "#000000"
-          }
-        },
-        interaction: { hover: true, tooltipDelay: 150 },
-        physics: {
-          enabled: true,
-          solver: "forceAtlas2Based",
-          forceAtlas2Based: {
-            gravitationalConstant: -30,
-            centralGravity: 0.005,
-            springLength: 200,
-            springConstant: 0.05
-          },
-          stabilization: { iterations: 200 }
-        }
+    function tooltipForNode(n) {
+      var props = (n && n.properties) ? n.properties : {};
+      if (props.description && props.description.trim() !== "") {
+        return props.description;
       }
-    );
+      return "No description available";
+    }
 
-    // after layout settles, freeze / fit
-    network.once("stabilizationIterationsDone", function () {
-      network.setOptions({ physics: { enabled: false } });
-      network.fit();
-    });
-  }
+    function load(limit) {
+      el.innerHTML = "";
+      fetch(endpoint + "?limit=" + limit)
+        .then(function(res){ return res.json(); })
+        .then(function(payload){
+          var rows = (payload && payload.data && payload.data.values) ? payload.data.values : [];
+          var rawNodes = [], rawEdges = [];
 
-  // initial load
-  load(1000);
-})();
-</script>
+          rows.forEach(function(v){
+            if (v[0]) rawNodes.push(v[0]);
+            if (v[2]) rawNodes.push(v[2]);
+            if (v[1]) rawEdges.push(v[1]);
+          });
+
+          var nodeMap = new Map();
+          rawNodes.forEach(function(n){
+            var id = toId(n);
+            if (!id || nodeMap.has(id)) return;
+            var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
+            nodeMap.set(id, {
+              id: id,
+              label: labelOf(n),
+              group: primary,
+              title: tooltipForNode(n),
+              color: { background: labelColor[primary] || "#d5c7b3", border: "#333" }
+            });
+          });
+
+          var edgeMap = new Map();
+          rawEdges.forEach(function(e){
+            var id = toId(e);
+            var from = e.startNodeElementId || e.start || e.from;
+            var to = e.endNodeElementId || e.end || e.to;
+            if (!id || !from || !to || edgeMap.has(id)) return;
+            var formattedLabel = e.type ? "<i>" + e.type.replace(/_/g, " ").toLowerCase().replace(/^\w/, function(c){return c.toUpperCase();}) + "</i>" : "";
+            edgeMap.set(id, {
+              id: id, from: from, to: to, label: formattedLabel, arrows: "to", length: 200,
+              color: { color: "#d5c7b3", highlight: "#d5c7b3" }
+            });
+          });
+
+          var visNodes = new vis.DataSet(Array.from(nodeMap.values()));
+          var visEdges = new vis.DataSet(Array.from(edgeMap.values()));
+
+          var network = new vis.Network(el, { nodes: visNodes, edges: visEdges }, {
+            nodes: { shape: "dot", size: 20, borderWidth: 2, font: { color: "#000000", size: 16, face: "Inter, system-ui" } },
+            edges: {
+              width: 1.5, color: { color: "#d5c7b3", highlight: "#d5c7b3" }, smooth: { type: "dynamic" },
+              font: { multi: "html", face: "Inter", color: "#000000" }
+            },
+            interaction: { hover: true, tooltipDelay: 150 },
+            physics: { enabled: true, solver: "forceAtlas2Based",
+              forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
+              stabilization: { iterations: 200 }
+            }
+          });
+
+          network.once("stabilizationIterationsDone", function () {
+            network.setOptions({ physics: { enabled: false } });
+            network.fit();
+          });
+        });
+    }
+
+    load(1000);
+  })();
+  </script>
 </body>
 </html>
