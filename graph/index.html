@@ -97,7 +97,9 @@
             id,
             from,
             to,
-            label: e.type,
+            label: e.type
+              ? e.type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())
+              : "",  // formatted label
             arrows: "to",
             length: 200, // force a minimum distance between connected nodes
             color: { color: "#d5c7b3", highlight: "#d5c7b3" }
