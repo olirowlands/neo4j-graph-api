@@ -248,8 +248,16 @@
           size: 23,
           color: "#b4c8a8"
         };
-        // prevent vis-network from changing style on select/hover (which hid icon)
-        base.chosen = false;
+        // preserve icon on hover/click
+        base.chosen = {
+          node: function (values) {
+            values.icon = values.icon || {};
+            values.icon.code = "";
+            values.icon.face = "FontAwesome";
+            values.icon.size = 23;
+            values.icon.color = "#b4c8a8";
+          }
+        };
       } else if (isAuthorLabel(primary)) {
         // Author: person icon, black
         base.shape = "icon";
@@ -259,7 +267,15 @@
           size: 23,
           color: "#000000"
         };
-        base.chosen = false;
+        base.chosen = {
+          node: function (values) {
+            values.icon = values.icon || {};
+            values.icon.code = "";
+            values.icon.face = "FontAwesome";
+            values.icon.size = 23;
+            values.icon.color = "#000000";
+          }
+        };
       } else {
         // normal colored dot nodes (unchanged)
         base.color = {
