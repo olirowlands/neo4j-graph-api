@@ -352,6 +352,77 @@
               panelDesc.textContent  = data._desc || "No description available.";
             }
           });
+
+          // --- Expand / Collapse logic ---
+          // We'll maintain a map of clusterIds -> original node id for expansion.
+          var clusterTracker = {};
+
+          // Create a cluster from one node's direct neighbours
+          function collapseNode(nodeId) {
+            // don't recluster a cluster
+            if (network.isCluster(nodeId)) return;
+
+            // get connected nodes
+            var connectedNodes = network.getConnectedNodes(nodeId);
+            if (!connectedNodes || connectedNodes.length === 0) return;
+
+            // Only collapse if there's something to collapse
+            var clusterOptionsByData = {
+              joinCondition: function (childOptions) {
+                // include any node that's either the main node or directly connected
+                return (childOptions.id === nodeId ||
+                        connectedNodes.indexOf(childOptions.id) !== -1);
+              },
+              processProperties: function (clusterOptions, childNodes) {
+                // label: keep the main node's label + (+N)
+                var mainNode = childNodes.find(function (n){ return n.id === nodeId; }) || childNodes[0];
+                var others = childNodes.length - 1;
+                clusterOptions.label = mainNode.label + " (+" + others + ")";
+                clusterOptions._type = mainNode._type || "cluster";
+                clusterOptions._desc = "Clustered view. Double-click to expand.";
+                // coloring: inherit main node's style if available
+                if (mainNode.color) {
+                  clusterOptions.color = mainNode.color;
+                } else if (mainNode.icon) {
+                  clusterOptions.shape = "icon";
+                  clusterOptions.icon = mainNode.icon;
+                }
+                clusterOptions.font = { color: "#000000", size: 16, face: "Inter, system-ui" };
+                clusterOptions.borderWidth = 2;
+                clusterOptions.shape = clusterOptions.shape || "dot";
+                clusterOptions.size = 24;
+                return clusterOptions;
+              },
+              clusterNodeProperties: {
+                allowSingleNodeCluster: false
+              }
+            };
+
+            var clusterId = network.cluster(clusterOptionsByData);
+            if (clusterId) {
+              clusterTracker[clusterId] = { main: nodeId };
+            }
+          }
+
+          function expandCluster(clusterId) {
+            if (!network.isCluster(clusterId)) return;
+            network.openCluster(clusterId);
+            delete clusterTracker[clusterId];
+          }
+
+          // Double click behavior:
+          // - if you double click a cluster, expand it
+          // - else double click a normal node, collapse it
+          network.on("doubleClick", function (params) {
+            if (!params || !params.nodes || params.nodes.length === 0) return;
+            var targetId = params.nodes[0];
+            if (network.isCluster(targetId)) {
+              expandCluster(targetId);
+            } else {
+              collapseNode(targetId);
+            }
+          });
+
         });
     }
 
