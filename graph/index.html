@@ -17,6 +17,12 @@
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
+
+      /* New palette entries */
+      --philosophy-color:#b4c8a8;
+      --dogma-color:#e8b7b7;
+      --exercise-color:#f3d9a4;
+      --author-color:#F59E0B; /* amber/gold for Author */
     }
 
     html, body {
@@ -57,7 +63,7 @@
 
     .legend {
       display: flex;
-      gap: 10px;
+      gap: 16px;
       align-items: center;
       margin-left: auto;
       color: white;
@@ -65,11 +71,43 @@
       font-weight: 500;
     }
 
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       display: inline-block;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.5);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 2px rgba(255,255,255,0.2) inset;
+    }
+
+    /* Special chip for Author with icon */
+    .dot-author {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      background: var(--author-color);
+      border: 1px solid rgba(0,0,0,0.5);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 2px rgba(255,255,255,0.2) inset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color:#1E1E1E;
+      font-size:0;
+    }
+
+    .dot-author svg {
+      width: 12px;
+      height: 12px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
     }
 
     #viz {
@@ -133,10 +171,33 @@
   <div class="wrap">
     <header>
       <h1>Hypomnemata</h1>
+
       <div class="legend">
-        <span class="dot" style="background:#b4c8a8"></span><small>Philosophy</small>
-        <span class="dot" style="background:#e8b7b7"></span><small>Dogma</small>
-        <span class="dot" style="background:#f3d9a4"></span><small>Exercise</small>
+        <div class="legend-item">
+          <span class="dot" style="background:var(--philosophy-color)"></span>
+          <small>Philosophy</small>
+        </div>
+
+        <div class="legend-item">
+          <span class="dot" style="background:var(--dogma-color)"></span>
+          <small>Dogma</small>
+        </div>
+
+        <div class="legend-item">
+          <span class="dot" style="background:var(--exercise-color)"></span>
+          <small>Exercise</small>
+        </div>
+
+        <div class="legend-item">
+          <span class="dot-author">
+            <!-- person icon -->
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+            </svg>
+          </span>
+          <small>Author</small>
+        </div>
       </div>
     </header>
 
@@ -161,15 +222,30 @@
     var panelDesc  = document.getElementById("details-desc");
 
     var labelColor = {
-      PHILOSOPHY: "#b4c8a8",
-      DOGMA: "#e8b7b7",
+      PHILOSOPHY: "var(--philosophy-color)",
+      DOGMA: "var(--dogma-color)",
       CONCEPT: "#b8cde2",
-      PRACTICE: "#f3d9a4",
-      RELATION: "#d5c7b3"
+      PRACTICE: "var(--exercise-color)",
+      RELATION: "#d5c7b3",
+      AUTHOR: "var(--author-color)"
     };
+
+    var AUTHOR_SVG_DATAURI =
+      'data:image/svg+xml;utf8,' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="%23F59E0B" stroke="none">' +
+      '<circle cx="12" cy="8" r="5"/>' +
+      '<path d="M4 21c0-4.5 4-7 8-7s8 2.5 8 7" />' +
+      '</svg>';
 
     function toId(obj) {
       return (obj && (obj.id || obj.identity || obj.elementId || (obj.properties && obj.properties.id))) || null;
+    }
+
+    function nodePrimaryLabel(obj) {
+      if (obj && obj.labels && obj.labels.length > 0) {
+        return obj.labels[0];
+      }
+      return "Node";
     }
 
     function nodeLabel(obj) {
@@ -177,8 +253,8 @@
         if (obj.properties.title) return obj.properties.title;
         if (obj.properties.name)  return obj.properties.name;
       }
-      if (obj && obj.labels && obj.labels[0]) return obj.labels[0];
-      return "Node";
+      var p = nodePrimaryLabel(obj);
+      return p;
     }
 
     function nodeDescription(obj) {
@@ -194,6 +270,86 @@
         return obj.labels[0].toLowerCase();
       }
       return "node";
+    }
+
+    function makeVisNode(n) {
+      var id = toId(n);
+      var primary = nodePrimaryLabel(n);
+      var base = {
+        id: id,
+        label: nodeLabel(n),
+        group: primary,
+        _desc: nodeDescription(n),
+        _type: nodeType(n)
+      };
+
+      var defaultColor = labelColor[primary] || "#d5c7b3";
+
+      var styled = {
+        shape: "dot",
+        size: 20,
+        color: {
+          background: defaultColor,
+          border: "#333",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover: { background: "#d4a44b", border: "#3a3a3a" }
+        },
+        font: {
+          color: "#000000",
+          size: 16,
+          face: "Inter, system-ui"
+        }
+      };
+
+      if (primary === "Author" || primary === "AUTHOR") {
+        styled = {
+          shape: "image",
+          image: AUTHOR_SVG_DATAURI,
+          size: 30,
+          font: {
+            color: "#000000",
+            size: 16,
+            face: "Inter, system-ui"
+          },
+          color: {
+            background: "var(--author-color)",
+            border: "#333",
+            highlight: { background: "#d4a44b", border: "#3a3a3a" },
+            hover: { background: "#d4a44b", border: "#3a3a3a" }
+          }
+        };
+      }
+
+      return Object.assign(base, styled);
+    }
+
+    function makeVisEdge(e) {
+      var id   = toId(e);
+      var from = e.startNodeElementId || e.start || e.from;
+      var to   = e.endNodeElementId   || e.end   || e.to;
+      if (!id || !from || !to) return null;
+
+      var formattedLabel = "";
+      if (e.type) {
+        formattedLabel =
+          "<i>" +
+          e.type
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/^\w/, function(c){ return c.toUpperCase(); }) +
+          "</i>";
+      }
+
+      return {
+        id: id,
+        from: from,
+        to: to,
+        label: formattedLabel,
+        arrows: "to",
+        length: 200,
+        color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" },
+        font: { multi: "html", face: "Inter", color: "#000000" }
+      };
     }
 
     function load(limit) {
@@ -217,62 +373,39 @@
           rawNodes.forEach(function(n){
             var id = toId(n);
             if (!id || nodeMap.has(id)) return;
-            var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
-
-            nodeMap.set(id, {
-              id: id,
-              label: nodeLabel(n),
-              group: primary,
-              _desc: nodeDescription(n),
-              _type: nodeType(n),
-              color: {
-                background: labelColor[primary] || "#d5c7b3",
-                border: "#333",
-                highlight: { background: "#d4a44b", border: "#3a3a3a" },
-                hover: { background: "#d4a44b", border: "#3a3a3a" }
-              }
-            });
+            nodeMap.set(id, makeVisNode(n));
           });
 
           var edgeMap = new Map();
           rawEdges.forEach(function(e){
-            var id = toId(e);
-            var from = e.startNodeElementId || e.start || e.from;
-            var to   = e.endNodeElementId   || e.end   || e.to;
-            if (!id || !from || !to || edgeMap.has(id)) return;
-
-            var formattedLabel = "";
-            if (e.type) {
-              formattedLabel =
-                "<i>" +
-                e.type.replace(/_/g, " ")
-                      .toLowerCase()
-                      .replace(/^\w/, function(c){ return c.toUpperCase(); }) +
-                "</i>";
-            }
-
-            edgeMap.set(id, {
-              id: id,
-              from: from,
-              to: to,
-              label: formattedLabel,
-              arrows: "to",
-              length: 200,
-              color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" }
-            });
+            var built = makeVisEdge(e);
+            if (!built || edgeMap.has(built.id)) return;
+            edgeMap.set(built.id, built);
           });
 
           var visNodes = new vis.DataSet(Array.from(nodeMap.values()));
           var visEdges = new vis.DataSet(Array.from(edgeMap.values()));
 
           var network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, {
-            nodes: { shape: "dot", size: 20, borderWidth: 2, font: { color: "#000000", size: 16, face: "Inter, system-ui" } },
-            edges: { width: 1.5, color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" }, smooth: { type: "dynamic" },
-                     font: { multi: "html", face: "Inter", color: "#000000" } },
+            nodes: {
+              shape: "dot",
+              size: 20,
+              borderWidth: 2,
+              font: { color: "#000000", size: 16, face: "Inter, system-ui" }
+            },
+            edges: {
+              width: 1.5,
+              color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" },
+              smooth: { type: "dynamic" },
+              font: { multi: "html", face: "Inter", color: "#000000" }
+            },
             interaction: { hover: true, tooltipDelay: 150 },
-            physics: { enabled: true, solver: "forceAtlas2Based",
+            physics: {
+              enabled: true,
+              solver: "forceAtlas2Based",
               forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
-              stabilization: { iterations: 200 } }
+              stabilization: { iterations: 200 }
+            }
           });
 
           network.once("stabilizationIterationsDone", function () {
