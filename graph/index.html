@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome for author/person + brain icons -->
+  <!-- Font Awesome for legend preview only -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <style>
@@ -142,9 +142,9 @@
       line-height: 1.5;
     }
 
-    /* Map Font Awesome 6 Free to 'FontAwesome' so vis-network icon shape works */
+    /* make sure vis-network can draw Font Awesome text nodes */
     @font-face {
-      font-family: "FontAwesome";
+      font-family: "FA6Solid";
       font-weight: 900;
       src: local("Font Awesome 6 Free");
     }
@@ -192,7 +192,7 @@
       CONCEPT: "#b8cde2",
       PRACTICE: "#f3d9a4",
       RELATION: "#d5c7b3"
-      // AUTHOR handled as icon
+      // AUTHOR handled separately
     };
 
     function toId(obj) {
@@ -223,74 +223,98 @@
       return "node";
     }
 
-    function isAuthorLabel(primary) {
-      return primary && primary.toUpperCase() === "AUTHOR";
+    function primaryLabel(n){
+      return (n.labels && n.labels[0]) ? n.labels[0] : "Node";
     }
 
-    function isPhilosophyLabel(primary) {
-      return primary && primary.toUpperCase() === "PHILOSOPHY";
+    function isAuthor(primary) {
+      return primary.toUpperCase() === "AUTHOR";
     }
 
-    // chosen fn that preserves icon nodes visually and only tweaks border/scale
-    function chosenNodeFn(values, id, selected, hovering) {
-      if (selected || hovering) {
-        values.borderWidth = 3;
-        values.shadow = true;
-        values.shadowColor = "rgba(0,0,0,0.4)";
-        values.shadowSize = 8;
-        values.size = (values.size || 23) * 1.1;
-      }
+    function isPhilosophy(primary) {
+      return primary.toUpperCase() === "PHILOSOPHY";
     }
 
-    function chosenLabelFn(values, id, selected, hovering) {
-      if (selected || hovering) {
-        values.color = "#000000";
-        values.size = (values.size || 16) + 1;
-        values.strokeWidth = 0;
-      }
-    }
-
+    // Build node options. For PHILOSOPHY and AUTHOR we render as text nodes
+    // using the Font Awesome glyph directly. That avoids vis-network "icon"
+    // shape logic, so the glyph will never disappear on select/hover.
     function buildNodeOptions(n) {
-      var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
+      var primary = primaryLabel(n);
 
-      // base node config
       var base = {
         id: toId(n),
-        label: nodeLabel(n),
-        group: primary,
         _desc: nodeDescription(n),
         _type: nodeType(n),
         chosen: {
-          node: chosenNodeFn,
-          label: chosenLabelFn
+          node: function(values, id, selected, hovering) {
+            if (selected || hovering) {
+              values.borderWidth = 3;
+              values.shadow = true;
+              values.shadowColor = "rgba(0,0,0,0.4)";
+              values.shadowSize = 8;
+              values.size = (values.size || 23) * 1.1;
+            }
+          },
+          label: function(values, id, selected, hovering) {
+            if (selected || hovering) {
+              values.color = "#000000";
+              values.size = (values.size || 16) + 1;
+              values.strokeWidth = 0;
+            }
+          }
         }
       };
 
-      if (isPhilosophyLabel(primary)) {
-        // Philosophy: brain icon, keep green colour
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf5dc", // brain
-          size: 23,
-          color: "#b4c8a8"
-        };
-      } else if (isAuthorLabel(primary)) {
-        // Author: person icon, black
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf007", // user
-          size: 23,
+      if (isPhilosophy(primary)) {
+        // Brain icon (Font Awesome codepoint f5dc)
+        base.shape = "text";
+        base.label = "\uf5dc " + nodeLabel(n);
+        base.font = {
+          face: "FA6Solid, 'Font Awesome 6 Free', Inter, system-ui",
+          size: 20,
+          vadjust: 0,
+          multi: true,
           color: "#000000"
         };
+        base.color = {
+          background: labelColor.PHILOSOPHY,
+          border: "#333",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover: { background: "#d4a44b", border: "#3a3a3a" }
+        };
+      } else if (isAuthor(primary)) {
+        // User icon (Font Awesome codepoint f007)
+        base.shape = "text";
+        base.label = "\uf007 " + nodeLabel(n);
+        base.font = {
+          face: "FA6Solid, 'Font Awesome 6 Free', Inter, system-ui",
+          size: 20,
+          vadjust: 0,
+          multi: true,
+          color: "#000000"
+        };
+        base.color = {
+          background: "#ffffff",
+          border: "#000000",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover: { background: "#d4a44b", border: "#3a3a3a" }
+        };
       } else {
-        // normal colored dot nodes
+        // All other node types = regular dot with palette colour.
+        base.shape = "dot";
+        base.size = 23;
+        base.borderWidth = 2;
         base.color = {
           background: labelColor[primary] || "#d5c7b3",
           border: "#333",
           highlight: { background: "#d4a44b", border: "#3a3a3a" },
           hover: { background: "#d4a44b", border: "#3a3a3a" }
+        };
+        base.label = nodeLabel(n);
+        base.font = {
+          face: "Inter, system-ui",
+          color: "#000000",
+          size: 16
         };
       }
 
