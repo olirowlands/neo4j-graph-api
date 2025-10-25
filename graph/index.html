@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- Font Awesome for author/person icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
   <style>
     :root {
       --bg:#f9f8f5;
@@ -70,6 +73,20 @@
       height: 10px;
       border-radius: 50%;
       display: inline-block;
+    }
+
+    .author-icon {
+      width: 12px;
+      height: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #000000;
+      background: #ffffff;
+      border-radius: 50%;
+      border: 1px solid #000000;
+      font-size: 9px;
+      line-height: 1;
     }
 
     #viz {
@@ -137,6 +154,7 @@
         <span class="dot" style="background:#b4c8a8"></span><small>Philosophy</small>
         <span class="dot" style="background:#e8b7b7"></span><small>Dogma</small>
         <span class="dot" style="background:#f3d9a4"></span><small>Exercise</small>
+        <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
       </div>
     </header>
 
@@ -166,6 +184,7 @@
       CONCEPT: "#b8cde2",
       PRACTICE: "#f3d9a4",
       RELATION: "#d5c7b3"
+      // no color for AUTHOR because we render it as an icon instead
     };
 
     function toId(obj) {
@@ -196,6 +215,45 @@
       return "node";
     }
 
+    function isAuthorLabel(primary) {
+      return primary && primary.toUpperCase() === "AUTHOR";
+    }
+
+    function buildNodeOptions(n) {
+      var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
+
+      // base node config
+      var base = {
+        id: toId(n),
+        label: nodeLabel(n),
+        group: primary,
+        _desc: nodeDescription(n),
+        _type: nodeType(n)
+      };
+
+      if (isAuthorLabel(primary)) {
+        // Render Author nodes as a small black person icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf007", // user icon
+          size: 20,
+          color: "#000000"
+        };
+        // do not include color/background so we don't affect palette
+      } else {
+        // normal colored dot nodes (unchanged)
+        base.color = {
+          background: labelColor[primary] || "#d5c7b3",
+          border: "#333",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover: { background: "#d4a44b", border: "#3a3a3a" }
+        };
+      }
+
+      return base;
+    }
+
     function load(limit) {
       fetch(endpoint + "?limit=" + limit)
         .then(function(res){ return res.json(); })
@@ -217,21 +275,8 @@
           rawNodes.forEach(function(n){
             var id = toId(n);
             if (!id || nodeMap.has(id)) return;
-            var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
 
-            nodeMap.set(id, {
-              id: id,
-              label: nodeLabel(n),
-              group: primary,
-              _desc: nodeDescription(n),
-              _type: nodeType(n),
-              color: {
-                background: labelColor[primary] || "#d5c7b3",
-                border: "#333",
-                highlight: { background: "#d4a44b", border: "#3a3a3a" },
-                hover: { background: "#d4a44b", border: "#3a3a3a" }
-              }
-            });
+            nodeMap.set(id, buildNodeOptions(n));
           });
 
           var edgeMap = new Map();
@@ -266,13 +311,30 @@
           var visEdges = new vis.DataSet(Array.from(edgeMap.values()));
 
           var network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, {
-            nodes: { shape: "dot", size: 20, borderWidth: 2, font: { color: "#000000", size: 16, face: "Inter, system-ui" } },
-            edges: { width: 1.5, color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" }, smooth: { type: "dynamic" },
-                     font: { multi: "html", face: "Inter", color: "#000000" } },
+            nodes: {
+              shape: "dot",
+              size: 20,
+              borderWidth: 2,
+              font: { color: "#000000", size: 16, face: "Inter, system-ui" }
+            },
+            edges: {
+              width: 1.5,
+              color: { color: "#d5c7b3", highlight: "#d4a44b", hover: "#d4a44b" },
+              smooth: { type: "dynamic" },
+              font: { multi: "html", face: "Inter", color: "#000000" }
+            },
             interaction: { hover: true, tooltipDelay: 150 },
-            physics: { enabled: true, solver: "forceAtlas2Based",
-              forceAtlas2Based: { gravitationalConstant: -30, centralGravity: 0.005, springLength: 200, springConstant: 0.05 },
-              stabilization: { iterations: 200 } }
+            physics: {
+              enabled: true,
+              solver: "forceAtlas2Based",
+              forceAtlas2Based: {
+                gravitationalConstant: -30,
+                centralGravity: 0.005,
+                springLength: 200,
+                springConstant: 0.05
+              },
+              stabilization: { iterations: 200 }
+            }
           });
 
           network.once("stabilizationIterationsDone", function () {
