@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome for author/person icon -->
+  <!-- Font Awesome for author/person + brain icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <style>
@@ -227,6 +227,29 @@
       return primary && primary.toUpperCase() === "AUTHOR";
     }
 
+    function isPhilosophyLabel(primary) {
+      return primary && primary.toUpperCase() === "PHILOSOPHY";
+    }
+
+    // chosen fn that preserves icon nodes visually and only tweaks border/scale
+    function chosenNodeFn(values, id, selected, hovering) {
+      if (selected || hovering) {
+        values.borderWidth = 3;
+        values.shadow = true;
+        values.shadowColor = "rgba(0,0,0,0.4)";
+        values.shadowSize = 8;
+        values.size = (values.size || 23) * 1.1;
+      }
+    }
+
+    function chosenLabelFn(values, id, selected, hovering) {
+      if (selected || hovering) {
+        values.color = "#000000";
+        values.size = (values.size || 16) + 1;
+        values.strokeWidth = 0;
+      }
+    }
+
     function buildNodeOptions(n) {
       var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
 
@@ -238,12 +261,12 @@
         _desc: nodeDescription(n),
         _type: nodeType(n),
         chosen: {
-          node: true,   // let vis handle highlighting so the icon doesn't disappear
-          label: true
+          node: chosenNodeFn,
+          label: chosenLabelFn
         }
       };
 
-      if (primary && primary.toUpperCase() === "PHILOSOPHY") {
+      if (isPhilosophyLabel(primary)) {
         // Philosophy: brain icon, keep green colour
         base.shape = "icon";
         base.icon = {
@@ -262,7 +285,7 @@
           color: "#000000"
         };
       } else {
-        // normal colored dot nodes (unchanged)
+        // normal colored dot nodes
         base.color = {
           background: labelColor[primary] || "#d5c7b3",
           border: "#333",
@@ -295,7 +318,6 @@
           rawNodes.forEach(function(n){
             var id = toId(n);
             if (!id || nodeMap.has(id)) return;
-
             nodeMap.set(id, buildNodeOptions(n));
           });
 
