@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome for author/person icon -->
+  <!-- Font Awesome for author/person & philosophy/brain icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <style>
@@ -75,18 +75,25 @@
       display: inline-block;
     }
 
-    .author-icon {
+    .author-icon,
+    .philosophy-icon {
       width: 12px;
       height: 12px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #000000;
-      background: #ffffff;
       border-radius: 50%;
       border: 1px solid #000000;
       font-size: 9px;
       line-height: 1;
+      background: #ffffff;
+      color: #000000;
+    }
+
+    /* philosophy icon should keep philosophy green for the glyph */
+    .philosophy-icon {
+      border-color: #000000;
+      color: #b4c8a8; /* same green as PHILOSOPHY nodes */
     }
 
     #viz {
@@ -151,7 +158,7 @@
     <header>
       <h1>Hypomnemata</h1>
       <div class="legend">
-        <span class="dot" style="background:#b4c8a8"></span><small>Philosophy</small>
+        <span class="philosophy-icon"><i class="fa-solid fa-brain"></i></span><small>Philosophy</small>
         <span class="dot" style="background:#e8b7b7"></span><small>Dogma</small>
         <span class="dot" style="background:#f3d9a4"></span><small>Practice</small>
         <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
@@ -219,6 +226,10 @@
       return primary && primary.toUpperCase() === "AUTHOR";
     }
 
+    function isPhilosophyLabel(primary) {
+      return primary && primary.toUpperCase() === "PHILOSOPHY";
+    }
+
     function buildNodeOptions(n) {
       var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
 
@@ -240,7 +251,15 @@
           size: 23,
           color: "#000000"
         };
-        // do not include color/background so we don't affect palette
+      } else if (isPhilosophyLabel(primary)) {
+        // Render Philosophy nodes as a green brain icon, keeping the PHILOSOPHY green
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf5dc", // brain icon
+          size: 23,
+          color: labelColor[primary] || "#b4c8a8" // keep the green
+        };
       } else {
         // normal colored dot nodes (unchanged)
         base.color = {
