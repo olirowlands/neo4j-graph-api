@@ -374,26 +374,26 @@
             network.setOptions({ physics: { enabled: false } });
           });
 
-          // util: reset ALL icon nodes back to normal colour
-          function resetIconHighlights() {
-            var ids = visNodes.getIds();
-            ids.forEach(function(id){
-              var n = visNodes.get(id);
-              if (!n || n.shape !== "icon") return;
-              if (!n._iconOriginal) return;
-              if (n.icon && n.icon.color !== n._iconOriginal) {
-                visNodes.update({
-                  id: id,
-                  icon: {
-                    face: n.icon.face,
-                    code: n.icon.code,
-                    size: n.icon.size,
-                    color: n._iconOriginal
-                  }
-                });
-              }
-            });
-          }
+         // Updated resetIconHighlights function
+function resetIconHighlights() {
+  var ids = visNodes.getIds();
+  ids.forEach(function (id) {
+    var n = visNodes.get(id);
+    if (!n || n.shape !== "icon") return;
+    if (!n._iconOriginal) return;
+
+    // Ensure all icon properties are preserved
+    visNodes.update({
+      id: id,
+      icon: {
+        face: n.icon.face || "FontAwesome",
+        code: n.icon.code || "\uf007", // Default to user icon if missing
+        size: n.icon.size || 23,
+        color: n._iconOriginal
+      }
+    });
+  });
+}
 
           // CLICK HANDLER (fixed):
           // Only update the side panel. Do NOT recolour or delete the node.
