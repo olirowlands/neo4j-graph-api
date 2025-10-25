@@ -141,7 +141,7 @@
       white-space: pre-wrap;
       line-height: 1.5;
     }
-  
+
     /* Map Font Awesome 6 Free to 'FontAwesome' so vis-network icon shape works */
     @font-face {
       font-family: "FontAwesome";
@@ -192,7 +192,7 @@
       CONCEPT: "#b8cde2",
       PRACTICE: "#f3d9a4",
       RELATION: "#d5c7b3"
-      // no color for AUTHOR because we render it as an icon instead
+      // AUTHOR handled as icon
     };
 
     function toId(obj) {
@@ -236,7 +236,11 @@
         label: nodeLabel(n),
         group: primary,
         _desc: nodeDescription(n),
-        _type: nodeType(n)
+        _type: nodeType(n),
+        chosen: {
+          node: true,   // let vis handle highlighting so the icon doesn't disappear
+          label: true
+        }
       };
 
       if (primary && primary.toUpperCase() === "PHILOSOPHY") {
@@ -248,16 +252,6 @@
           size: 23,
           color: "#b4c8a8"
         };
-        // preserve icon on hover/click
-        base.chosen = {
-          node: function (values) {
-            values.icon = values.icon || {};
-            values.icon.code = "";
-            values.icon.face = "FontAwesome";
-            values.icon.size = 23;
-            values.icon.color = "#b4c8a8";
-          }
-        };
       } else if (isAuthorLabel(primary)) {
         // Author: person icon, black
         base.shape = "icon";
@@ -266,15 +260,6 @@
           code: "\uf007", // user
           size: 23,
           color: "#000000"
-        };
-        base.chosen = {
-          node: function (values) {
-            values.icon = values.icon || {};
-            values.icon.code = "";
-            values.icon.face = "FontAwesome";
-            values.icon.size = 23;
-            values.icon.color = "#000000";
-          }
         };
       } else {
         // normal colored dot nodes (unchanged)
