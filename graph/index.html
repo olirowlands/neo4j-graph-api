@@ -237,58 +237,57 @@
 
     // Build node map entry
     function buildNodeOptions(n) {
-      var primary = primaryLabel(n);
+  var primary = primaryLabel(n);
 
-      var base = {
-        id: toId(n),
-        label: nodeLabel(n),
-        group: primary,
-        _desc: nodeDescription(n),
-        _type: nodeType(n)
-      };
+  var base = {
+    id: toId(n),
+    label: nodeLabel(n),
+    group: primary,
+    _desc: nodeDescription(n),
+    _type: nodeType(n)
+  };
 
-      if (isPhilosophy(primary)) {
-        // Philosophy: brain icon, green
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf5dc",
-          size: 23,
-          color: "#b4c8a8"
-        };
-        base._iconOriginal = "#b4c8a8";
-      } else if (isAuthor(primary)) {
-        // Author: user icon, black
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf007",
-          size: 23,
-          color: "#000000"
-        };
-        base._iconOriginal = "#000000";
-      } else {
-        // Everything else = coloured dot
-        base.shape = "dot";
-        base.size = 23;
-        base.borderWidth = 2;
-        base.color = {
-          background: labelColor[primary] || "#d5c7b3",
-          border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover: { background: "#d4a44b", border: "#3a3a3a" }
-        };
-        base.font = {
-          face: "Inter, system-ui",
-          color: "#000000",
-          size: 16
-        };
-      }
+  if (isPhilosophy(primary)) {
+    // Philosophy: brain icon, green
+    base.shape = "icon";
+    base.icon = {
+      face: "FontAwesome",
+      code: "\uf5dc",
+      size: 23,
+      color: "#b4c8a8"
+    };
+    base._iconOriginal = "#b4c8a8";
+  } else if (isAuthor(primary)) {
+    // Author: user icon, black
+    base.shape = "icon";
+    base.icon = {
+      face: "FontAwesome",
+      code: "\uf007",
+      size: 23,
+      color: "#000000"
+    };
+    base._iconOriginal = "#000000";
+  } else {
+    // Everything else = coloured dot
+    base.shape = "dot";
+    base.size = 23;
+    base.borderWidth = 2;
+    base.color = {
+      background: labelColor[primary] || "#d5c7b3",
+      border: "#333",
+      highlight: { background: "#d4a44b", border: "#3a3a3a" },
+      hover: { background: "#d4a44b", border: "#3a3a3a" }
+    };
+    base.font = {
+      face: "Inter, system-ui",
+      color: "#000000",
+      size: 16
+    };
+  }
 
-      return base;
-    }
-
-    function load(limit) {
+  return base;
+}
+function load(limit) {
       fetch(endpoint + "?limit=" + limit)
         .then(function(res){ return res.json(); })
         .then(function(payload){
@@ -374,48 +373,49 @@
             network.setOptions({ physics: { enabled: false } });
           });
 
-          // util: reset ALL icon nodes back to normal colour
-          function resetIconHighlights() {
-            var ids = visNodes.getIds();
-            ids.forEach(function(id){
-              var n = visNodes.get(id);
-              if (!n || n.shape !== "icon") return;
-              if (!n._iconOriginal) return;
-              if (n.icon && n.icon.color !== n._iconOriginal) {
-                visNodes.update({
-                  id: id,
-                  icon: {
-                    face: n.icon.face,
-                    code: n.icon.code,
-                    size: n.icon.size,
-                    color: n._iconOriginal
-                  }
-                });
-              }
-            });
-          }
+         // Updated resetIconHighlights function
+function resetIconHighlights() {
+  var ids = visNodes.getIds();
+  ids.forEach(function (id) {
+    var n = visNodes.get(id);
+    if (!n || n.shape !== "icon") return;
+    if (!n._iconOriginal) return;
 
+    // Ensure all icon properties are preserved
+    visNodes.update({
+      id: id,
+      icon: {
+        face: n.icon.face || "FontAwesome",
+        code: n.icon.code || "\uf007", // Default to user icon if missing
+        size: n.icon.size || 23,
+        color: n._iconOriginal
+      }
+    });
+  });
+}
+
+          // CLICK HANDLER (fixed):
+          // Only update the side panel. Do NOT recolour or delete the node.
           // CLICK HANDLER:
-          // Only update the side panel. Do NOT recolour, mutate size, or remove icons.
-          network.on("click", function (params) {
-            if (params.nodes && params.nodes.length > 0) {
-              var nodeId = params.nodes[0];
-              var data = visNodes.get(nodeId);
-              if (!data) return;
+// Only update the side panel. Do NOT recolour, mutate size, or remove icons.
+network.on("click", function (params) {
+  if (params.nodes && params.nodes.length > 0) {
+    var nodeId = params.nodes[0];
+    var data = visNodes.get(nodeId);
+    if (!data) return;
 
-              // panel update
-              panelTitle.textContent = data.label || "Untitled";
-              panelType.textContent  = data._type || "node";
-              panelDesc.textContent  = data._desc || "No description available.";
+    // panel update
+    panelTitle.textContent = data.label || "Untitled";
+    panelType.textContent  = data._type || "node";
+    panelDesc.textContent  = data._desc || "No description available.";
 
-              // reset hover highlight back to original colour
-              resetIconHighlights();
-            } else {
-              resetIconHighlights();
-            }
-          });
-
-          // HOVER highlight (orange) for icon nodes only
+    // reset hover highlight back to original colour
+    resetIconHighlights();
+  } else {
+    resetIconHighlights();
+  }
+});
+// HOVER highlight (orange) for icon nodes only
           network.on("hoverNode", function (params) {
             var n = visNodes.get(params.node);
             if (!n || n.shape !== "icon") return;
