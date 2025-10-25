@@ -40,15 +40,21 @@
 
     header {
       flex: 0 0 auto;
-      height: 56px;
       box-sizing: border-box;
-      padding: 14px 16px;
+      padding: 14px 16px 16px;
       background: var(--card);
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      align-items: center;
       border-bottom: 1px solid var(--border);
       z-index: 10;
+    }
+
+    .header-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
     }
 
     header h1 {
@@ -56,11 +62,14 @@
       margin: 0 8px 0 0;
       letter-spacing: .2px;
       color: white;
+      font-weight: 600;
     }
 
     .legend {
       display: flex;
-      gap: 10px;
+      flex-wrap: wrap;
+      row-gap: 6px;
+      column-gap: 10px;
       align-items: center;
       margin-left: auto;
       color: white;
@@ -94,6 +103,15 @@
     .philosophy-icon {
       border-color: #000000;
       color: #b4c8a8; /* same green as PHILOSOPHY nodes */
+    }
+
+    .hypo-desc {
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.4;
+      max-width: 960px;
+      opacity: 0.9;
     }
 
     #viz {
@@ -156,12 +174,18 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Hypomnemata</h1>
-      <div class="legend">
-        <span class="philosophy-icon"><i class="fa-solid fa-brain"></i></span><small>Philosophy</small>
-        <span class="dot" style="background:#e8b7b7"></span><small>Dogma</small>
-        <span class="dot" style="background:#f3d9a4"></span><small>Practice</small>
-        <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
+      <div class="header-top">
+        <h1>Hypomnemata</h1>
+        <div class="legend">
+          <span class="philosophy-icon"><i class="fa-solid fa-brain"></i></span><small>Philosophy</small>
+          <span class="dot" style="background:#e8b7b7"></span><small>Dogma</small>
+          <span class="dot" style="background:#f3d9a4"></span><small>Practice</small>
+          <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
+        </div>
+      </div>
+
+      <div class="hypo-desc">
+        Hypomnemata (Greek: ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
       </div>
     </header>
 
@@ -191,7 +215,6 @@
       CONCEPT: "#b8cde2",
       PRACTICE: "#f3d9a4",
       RELATION: "#d5c7b3"
-      // no color for AUTHOR because we render it as an icon instead
     };
 
     function toId(obj) {
@@ -233,7 +256,6 @@
     function buildNodeOptions(n) {
       var primary = (n.labels && n.labels[0]) ? n.labels[0] : "Node";
 
-      // base node config
       var base = {
         id: toId(n),
         label: nodeLabel(n),
@@ -243,25 +265,22 @@
       };
 
       if (isAuthorLabel(primary)) {
-        // Render Author nodes as a small black person icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf007", // user icon
+          code: "\uf007",
           size: 23,
           color: "#000000"
         };
       } else if (isPhilosophyLabel(primary)) {
-        // Render Philosophy nodes as a green brain icon, keeping the PHILOSOPHY green
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf5dc", // brain icon
+          code: "\uf5dc",
           size: 35,
-          color: labelColor[primary] || "#b4c8a8" // keep the green
+          color: labelColor[primary] || "#b4c8a8"
         };
       } else {
-        // normal colored dot nodes (unchanged)
         base.color = {
           background: labelColor[primary] || "#d5c7b3",
           border: "#333",
