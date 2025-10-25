@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome for legend preview only -->
+  <!-- Font Awesome for legend preview AND for vis-network icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <style>
@@ -142,7 +142,8 @@
       line-height: 1.5;
     }
 
-    /* Make sure vis-network can find Font Awesome 6 under the 'FontAwesome' name it expects */
+    /* Critical: give vis-network a font-family called "FontAwesome" that maps to FA6 Free Solid
+       so shape:'icon' can render \uf007 and \uf5dc. */
     @font-face {
       font-family: "FontAwesome";
       font-weight: 900;
@@ -234,10 +235,10 @@
       return primary.toUpperCase() === "PHILOSOPHY";
     }
 
+    // Build node map entry
     function buildNodeOptions(n) {
       var primary = primaryLabel(n);
 
-      // base node config
       var base = {
         id: toId(n),
         label: nodeLabel(n),
@@ -255,11 +256,7 @@
           size: 23,
           color: "#b4c8a8"
         };
-        // disable chosen so vis never redraws and drops icon
-        base.chosen = {
-          node: false,
-          label: false
-        };
+        base._iconOriginal = "#b4c8a8";
       } else if (isAuthor(primary)) {
         // Author: user icon, black
         base.shape = "icon";
@@ -269,13 +266,9 @@
           size: 23,
           color: "#000000"
         };
-        // disable chosen so vis never redraws and drops icon
-        base.chosen = {
-          node: false,
-          label: false
-        };
+        base._iconOriginal = "#000000";
       } else {
-        // All other node types = regular coloured dot
+        // Everything else = coloured dot
         base.shape = "dot";
         base.size = 23;
         base.borderWidth = 2;
@@ -289,24 +282,6 @@
           face: "Inter, system-ui",
           color: "#000000",
           size: 16
-        };
-        base.chosen = {
-          node: function(values, id, selected, hovering) {
-            if (selected || hovering) {
-              values.borderWidth = 3;
-              values.shadow = true;
-              values.shadowColor = "rgba(0,0,0,0.4)";
-              values.shadowSize = 8;
-              values.size = (values.size || 23) * 1.1;
-            }
-          },
-          label: function(values, id, selected, hovering) {
-            if (selected || hovering) {
-              values.color = "#000000";
-              values.size = (values.size || 16) + 1;
-              values.strokeWidth = 0;
-            }
-          }
         };
       }
 
@@ -399,16 +374,85 @@
             network.setOptions({ physics: { enabled: false } });
           });
 
+          // util: reset ALL icon nodes back to normal colour
+          function resetIconHighlights() {
+            var ids = visNodes.getIds();
+            ids.forEach(function(id){
+              var n = visNodes.get(id);
+              if (!n || n.shape !== "icon") return;
+              if (!n._iconOriginal) return;
+
+              // if currently orange, put it back
+              if (n.icon && n.icon.color !== n._iconOriginal) {
+                visNodes.update({
+                  id: id,
+                  icon: {
+                    face: n.icon.face,
+                    code: n.icon.code,
+                    size: n.icon.size,
+                    color: n._iconOriginal
+                  }
+                });
+              }
+            });
+          }
+
+          // click handler: set clicked icon node to orange like other nodes
           network.on("click", function (params) {
             if (params.nodes && params.nodes.length > 0) {
               var nodeId = params.nodes[0];
               var data = visNodes.get(nodeId);
               if (!data) return;
 
+              // panel update
               panelTitle.textContent = data.label || "Untitled";
               panelType.textContent  = data._type || "node";
               panelDesc.textContent  = data._desc || "No description available.";
+
+              // highlight logic for icon nodes
+              if (data.shape === "icon") {
+                resetIconHighlights();
+                visNodes.update({
+                  id: nodeId,
+                  icon: {
+                    face: data.icon.face,
+                    code: data.icon.code,
+                    size: data.icon.size,
+                    color: "#d4a44b" // same orange highlight
+                  }
+                });
+              } else {
+                // if we clicked a normal dot, still reset icon nodes
+                resetIconHighlights();
+              }
+            } else {
+              // clicked on background -> clear icon highlight
+              resetIconHighlights();
             }
+          });
+
+          // also highlight icon node on hover-in and unhighlight on hover-out
+          network.on("hoverNode", function (params) {
+            var n = visNodes.get(params.node);
+            if (!n || n.shape !== "icon") return;
+            // temporarily set orange
+            visNodes.update({
+              id: n.id,
+              icon: {
+                face: n.icon.face,
+                code: n.icon.code,
+                size: n.icon.size,
+                color: "#d4a44b"
+              }
+            });
+          });
+
+          network.on("blurNode", function (params) {
+            var n = visNodes.get(params.node);
+            if (!n || n.shape !== "icon") return;
+            // restore only if it's not also the selected one
+            // we'll just call resetIconHighlights() which respects selected node later through click
+            resetIconHighlights();
           });
         });
     }
