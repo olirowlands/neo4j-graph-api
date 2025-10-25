@@ -231,33 +231,24 @@
         _type: nodeType(n)
       };
 
-      if (isAuthorLabel(primary)) {
+      if (primary && primary.toUpperCase() === "PHILOSOPHY") {
+        // Render Philosophy nodes as brain icon but keep their original colour
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\\uf5dc", // brain icon
+          size: 23,
+          color: "#b4c8a8"
+        };
+      } else if (isAuthorLabel(primary)) {
         // Render Author nodes as a small black person icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf007", // user icon
+          code: "\\uf007", // user icon
           size: 23,
           color: "#000000"
         };
-      } else if (primary.toUpperCase() === "PHILOSOPHY") {
-        // Render Philosophy nodes as a brain icon
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf5dc", // brain icon
-          size: 23,
-          color: "#000000"
-        };
-        // Render Author nodes as a small black person icon
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf007", // user icon
-          size: 23,
-          color: "#000000"
-        };
-        // do not include color/background so we don't affect palette
       } else {
         // normal colored dot nodes (unchanged)
         base.color = {
