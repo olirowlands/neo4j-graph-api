@@ -142,13 +142,12 @@
       line-height: 1.5;
     }
 
-    /* make sure vis-network can draw Font Awesome text nodes */
+    /* Make sure vis-network can find Font Awesome 6 under the 'FontAwesome' name it expects */
     @font-face {
-      font-family: "FA6Solid";
+      font-family: "FontAwesome";
       font-weight: 900;
       src: local("Font Awesome 6 Free");
     }
-
   </style>
 
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
@@ -235,17 +234,63 @@
       return primary.toUpperCase() === "PHILOSOPHY";
     }
 
-    // Build node options. For PHILOSOPHY and AUTHOR we render as text nodes
-    // using the Font Awesome glyph directly. That avoids vis-network "icon"
-    // shape logic, so the glyph will never disappear on select/hover.
     function buildNodeOptions(n) {
       var primary = primaryLabel(n);
 
+      // base node config
       var base = {
         id: toId(n),
+        label: nodeLabel(n),
+        group: primary,
         _desc: nodeDescription(n),
-        _type: nodeType(n),
-        chosen: {
+        _type: nodeType(n)
+      };
+
+      if (isPhilosophy(primary)) {
+        // Philosophy: brain icon, green
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf5dc",
+          size: 23,
+          color: "#b4c8a8"
+        };
+        // disable chosen so vis never redraws and drops icon
+        base.chosen = {
+          node: false,
+          label: false
+        };
+      } else if (isAuthor(primary)) {
+        // Author: user icon, black
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf007",
+          size: 23,
+          color: "#000000"
+        };
+        // disable chosen so vis never redraws and drops icon
+        base.chosen = {
+          node: false,
+          label: false
+        };
+      } else {
+        // All other node types = regular coloured dot
+        base.shape = "dot";
+        base.size = 23;
+        base.borderWidth = 2;
+        base.color = {
+          background: labelColor[primary] || "#d5c7b3",
+          border: "#333",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover: { background: "#d4a44b", border: "#3a3a3a" }
+        };
+        base.font = {
+          face: "Inter, system-ui",
+          color: "#000000",
+          size: 16
+        };
+        base.chosen = {
           node: function(values, id, selected, hovering) {
             if (selected || hovering) {
               values.borderWidth = 3;
@@ -262,59 +307,6 @@
               values.strokeWidth = 0;
             }
           }
-        }
-      };
-
-      if (isPhilosophy(primary)) {
-        // Brain icon (Font Awesome codepoint f5dc)
-        base.shape = "text";
-        base.label = "\uf5dc " + nodeLabel(n);
-        base.font = {
-          face: "FA6Solid, 'Font Awesome 6 Free', Inter, system-ui",
-          size: 20,
-          vadjust: 0,
-          multi: true,
-          color: "#000000"
-        };
-        base.color = {
-          background: labelColor.PHILOSOPHY,
-          border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover: { background: "#d4a44b", border: "#3a3a3a" }
-        };
-      } else if (isAuthor(primary)) {
-        // User icon (Font Awesome codepoint f007)
-        base.shape = "text";
-        base.label = "\uf007 " + nodeLabel(n);
-        base.font = {
-          face: "FA6Solid, 'Font Awesome 6 Free', Inter, system-ui",
-          size: 20,
-          vadjust: 0,
-          multi: true,
-          color: "#000000"
-        };
-        base.color = {
-          background: "#ffffff",
-          border: "#000000",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover: { background: "#d4a44b", border: "#3a3a3a" }
-        };
-      } else {
-        // All other node types = regular dot with palette colour.
-        base.shape = "dot";
-        base.size = 23;
-        base.borderWidth = 2;
-        base.color = {
-          background: labelColor[primary] || "#d5c7b3",
-          border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover: { background: "#d4a44b", border: "#3a3a3a" }
-        };
-        base.label = nodeLabel(n);
-        base.font = {
-          face: "Inter, system-ui",
-          color: "#000000",
-          size: 16
         };
       }
 
