@@ -374,29 +374,29 @@
             network.setOptions({ physics: { enabled: false } });
           });
 
-         // Updated resetIconHighlights function
-function resetIconHighlights() {
-  var ids = visNodes.getIds();
-  ids.forEach(function (id) {
-    var n = visNodes.get(id);
-    if (!n || n.shape !== "icon") return;
-    if (!n._iconOriginal) return;
+          // util: reset ALL icon nodes back to normal colour
+          function resetIconHighlights() {
+            var ids = visNodes.getIds();
+            ids.forEach(function(id){
+              var n = visNodes.get(id);
+              if (!n || n.shape !== "icon") return;
+              if (!n._iconOriginal) return;
+              if (n.icon && n.icon.color !== n._iconOriginal) {
+                visNodes.update({
+                  id: id,
+                  icon: {
+                    face: n.icon.face,
+                    code: n.icon.code,
+                    size: n.icon.size,
+                    color: n._iconOriginal
+                  }
+                });
+              }
+            });
+          }
 
-    // Ensure all icon properties are preserved
-    visNodes.update({
-      id: id,
-      icon: {
-        face: n.icon.face || "FontAwesome",
-        code: n.icon.code || "\uf007", // Default to user icon if missing
-        size: n.icon.size || 23,
-        color: n._iconOriginal
-      }
-    });
-  });
-}
-
-          // CLICK HANDLER (fixed):
-          // Only update the side panel. Do NOT recolour or delete the node.
+          // CLICK HANDLER:
+          // Only update the side panel. Do NOT recolour, mutate size, or remove icons.
           network.on("click", function (params) {
             if (params.nodes && params.nodes.length > 0) {
               var nodeId = params.nodes[0];
@@ -408,7 +408,7 @@ function resetIconHighlights() {
               panelType.textContent  = data._type || "node";
               panelDesc.textContent  = data._desc || "No description available.";
 
-              // clear any stray hover highlight
+              // reset hover highlight back to original colour
               resetIconHighlights();
             } else {
               resetIconHighlights();
