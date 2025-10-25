@@ -17,7 +17,6 @@
       --border:#2b3242;
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
-      --highlight:#d4a44b;
     }
     html, body {height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     .wrap{height:100vh;width:100%;display:flex;flex-direction:column;}
@@ -27,7 +26,7 @@
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
     .author-icon{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;color:#000;background:#fff;border-radius:50%;border:1px solid #000;font-size:9px;}
     #viz{flex:0 0 auto;height:calc(100vh - 56px - 200px);background:transparent;}
-    #details{flex:0 0 auto;background:var(--footer-bg);color:var(--footer-text);border-top:1px solid #4a4a4a;box-shadow:0 -4px 12px rgba(0,0,0,0.25);padding:20px 0 24px;font-size:14px;line-height:1.5;}
+    #details{flex:0 0 auto;background:var(--card);color:var(--footer-text);border-top:1px solid #4a4a4a;box-shadow:0 -4px 12px rgba(0,0,0,0.25);padding:20px 0 24px;font-size:14px;line-height:1.5;}
     .details-inner{max-width:960px;margin:0 auto;width:100%;padding:0 24px;min-height:140px;}
     #details h2{margin:0 0 6px;font-size:16px;font-weight:600;color:var(--footer-text);}
     #details .meta{font-size:12px;font-weight:500;color:#ccc;margin-bottom:6px;text-transform:capitalize;}
@@ -68,56 +67,187 @@
     var panelType  = document.getElementById("details-type");
     var panelDesc  = document.getElementById("details-desc");
 
-    var labelColor = {PHILOSOPHY:"#b4c8a8",DOGMA:"#e8b7b7",CONCEPT:"#b8cde2",PRACTICE:"#f3d9a4",RELATION:"#d5c7b3"};
+    var labelColor = {
+      PHILOSOPHY:"#b4c8a8",
+      DOGMA:"#e8b7b7",
+      CONCEPT:"#b8cde2",
+      PRACTICE:"#f3d9a4",
+      RELATION:"#d5c7b3"
+    };
 
-    function toId(obj){return (obj&&(obj.id||obj.identity||obj.elementId||(obj.properties&&obj.properties.id)))||null;}
-    function nodeLabel(obj){if(obj&&obj.properties){if(obj.properties.title)return obj.properties.title;if(obj.properties.name)return obj.properties.name;}if(obj&&obj.labels&&obj.labels[0])return obj.labels[0];return"Node";}
-    function nodeDescription(obj){var p=(obj&&obj.properties)?obj.properties:{};return(p.description&&p.description.trim()!=="")?p.description:"No description available.";}
-    function nodeType(obj){if(obj&&obj.labels&&obj.labels[0])return obj.labels[0].toLowerCase();return"node";}
+    function toId(obj){
+      return (obj&&(obj.id||obj.identity||obj.elementId||(obj.properties&&obj.properties.id)))||null;
+    }
+    function nodeLabel(obj){
+      if(obj&&obj.properties){
+        if(obj.properties.title)return obj.properties.title;
+        if(obj.properties.name)return obj.properties.name;
+      }
+      if(obj&&obj.labels&&obj.labels[0])return obj.labels[0];
+      return "Node";
+    }
+    function nodeDescription(obj){
+      var p=(obj&&obj.properties)?obj.properties:{};
+      if(p.description&&p.description.trim()!==""){return p.description;}
+      return "No description available.";
+    }
+    function nodeType(obj){
+      if(obj&&obj.labels&&obj.labels[0]){return obj.labels[0].toLowerCase();}
+      return "node";
+    }
     function primaryLabel(n){return(n.labels&&n.labels[0])?n.labels[0]:"Node";}
     function isAuthor(p){return p.toUpperCase()==="AUTHOR";}
     function isPhilosophy(p){return p.toUpperCase()==="PHILOSOPHY";}
 
+    // IMPORTANT: icons never change colour now
     function buildNodeOptions(n){
       var primary=primaryLabel(n);
-      var base={id:toId(n),label:nodeLabel(n),group:primary,_desc:nodeDescription(n),_type:nodeType(n)};
+      var base={
+        id:toId(n),
+        label:nodeLabel(n),
+        group:primary,
+        _desc:nodeDescription(n),
+        _type:nodeType(n)
+      };
+
       if(isPhilosophy(primary)){
-        base.shape="icon";base.icon={face:"FontAwesome",code:"\uf5dc",size:23,color:"#b4c8a8"};base._iconOriginal="#b4c8a8";
+        base.shape="icon";
+        base.icon={
+          face:"FontAwesome",
+          code:"\uf5dc", // brain
+          size:23,
+          color:"#b4c8a8"
+        };
       }else if(isAuthor(primary)){
-        base.shape="icon";base.icon={face:"FontAwesome",code:"\uf007",size:23,color:"#000000"};base._iconOriginal="#000000";
+        base.shape="icon";
+        base.icon={
+          face:"FontAwesome",
+          code:"\uf007", // user
+          size:23,
+          color:"#000000"
+        };
       }else{
-        base.shape="dot";base.size=23;base.borderWidth=2;base.color={background:labelColor[primary]||"#d5c7b3",border:"#333",highlight:{background:"#d4a44b",border:"#3a3a3a"},hover:{background:"#d4a44b",border:"#3a3a3a"}};base.font={face:"Inter, system-ui",color:"#000000",size:16};
+        base.shape="dot";
+        base.size=23;
+        base.borderWidth=2;
+        base.color={
+          background:labelColor[primary]||"#d5c7b3",
+          border:"#333",
+          highlight:{background:"#d4a44b",border:"#3a3a3a"},
+          hover:{background:"#d4a44b",border:"#3a3a3a"}
+        };
+        base.font={
+          face:"Inter, system-ui",
+          color:"#000000",
+          size:16
+        };
       }
       return base;
     }
 
     function load(limit){
-      fetch(endpoint+"?limit="+limit).then(r=>r.json()).then(payload=>{
-        var rows=(payload&&payload.data&&payload.data.values)?payload.data.values:[];
-        var rawNodes=[],rawEdges=[];
-        rows.forEach(row=>{if(row[0])rawNodes.push(row[0]);if(row[2])rawNodes.push(row[2]);if(row[1])rawEdges.push(row[1]);});
-        var nodeMap=new Map();
-        rawNodes.forEach(n=>{var id=toId(n);if(!id||nodeMap.has(id))return;nodeMap.set(id,buildNodeOptions(n));});
-        var edgeMap=new Map();
-        rawEdges.forEach(e=>{
-          var id=toId(e),from=e.startNodeElementId||e.start||e.from,to=e.endNodeElementId||e.end||e.to;
-          if(!id||!from||!to||edgeMap.has(id))return;
-          var lbl=e.type?"<i>"+e.type.replace(/_/g," ").toLowerCase().replace(/^\w/,c=>c.toUpperCase())+"</i>":"";
-          edgeMap.set(id,{id:id,from:from,to:to,label:lbl,arrows:"to",length:200,color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},font:{multi:"html",face:"Inter",color:"#000"}});
+      fetch(endpoint+"?limit="+limit)
+        .then(r=>r.json())
+        .then(payload=>{
+          var rows=(payload&&payload.data&&payload.data.values)?payload.data.values:[];
+          var rawNodes=[],rawEdges=[];
+          rows.forEach(row=>{
+            if(row[0])rawNodes.push(row[0]);
+            if(row[2])rawNodes.push(row[2]);
+            if(row[1])rawEdges.push(row[1]);
+          });
+
+          var nodeMap=new Map();
+          rawNodes.forEach(n=>{
+            var id=toId(n);
+            if(!id||nodeMap.has(id))return;
+            nodeMap.set(id,buildNodeOptions(n));
+          });
+
+          var edgeMap=new Map();
+          rawEdges.forEach(e=>{
+            var id=toId(e),
+                from=e.startNodeElementId||e.start||e.from,
+                to  =e.endNodeElementId||e.end||e.to;
+            if(!id||!from||!to||edgeMap.has(id))return;
+
+            var lbl=e.type
+              ? "<i>"+e.type.replace(/_/g," ").toLowerCase().replace(/^\w/,c=>c.toUpperCase())+"</i>"
+              : "";
+
+            edgeMap.set(id,{
+              id:id,
+              from:from,
+              to:to,
+              label:lbl,
+              arrows:"to",
+              length:200,
+              color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},
+              font:{multi:"html",face:"Inter",color:"#000000"}
+            });
+          });
+
+          var visNodes=new vis.DataSet(Array.from(nodeMap.values()));
+          var visEdges=new vis.DataSet(Array.from(edgeMap.values()));
+
+          var network=new vis.Network(
+            container,
+            {nodes:visNodes,edges:visEdges},
+            {
+              nodes:{
+                shape:"dot",
+                size:23,
+                borderWidth:2,
+                font:{color:"#000000",size:16,face:"Inter, system-ui"}
+              },
+              edges:{
+                width:1.5,
+                color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},
+                smooth:{type:"dynamic"}
+              },
+              interaction:{hover:true,tooltipDelay:150},
+              physics:{
+                enabled:true,
+                solver:"forceAtlas2Based",
+                forceAtlas2Based:{
+                  gravitationalConstant:-30,
+                  centralGravity:0.005,
+                  springLength:200,
+                  springConstant:0.05
+                },
+                stabilization:{iterations:200}
+              }
+            }
+          );
+
+          network.once("stabilizationIterationsDone",function(){
+            network.setOptions({physics:{enabled:false}});
+          });
+
+          // HOVER: disabled for icons (we do nothing to icon nodes now)
+          network.on("hoverNode",function(p){
+            // do nothing
+          });
+
+          network.on("blurNode",function(p){
+            // do nothing
+          });
+
+          // CLICK: update panel only, never touch visNodes / icon config
+          network.on("click",function(p){
+            if(p.nodes && p.nodes.length>0){
+              var id=p.nodes[0];
+              var d=visNodes.get(id);
+              if(!d)return;
+              panelTitle.textContent=d.label||"Untitled";
+              panelType.textContent=d._type||"node";
+              panelDesc.textContent=d._desc||"No description available.";
+            }
+          });
+
         });
-        var visNodes=new vis.DataSet(Array.from(nodeMap.values()));
-        var visEdges=new vis.DataSet(Array.from(edgeMap.values()));
-        var network=new vis.Network(container,{nodes:visNodes,edges:visEdges},{
-          nodes:{shape:"dot",size:23,borderWidth:2,font:{color:"#000",size:16,face:"Inter, system-ui"}},
-          edges:{width:1.5,color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},smooth:{type:"dynamic"}},
-          interaction:{hover:true,tooltipDelay:150},
-          physics:{enabled:true,solver:"forceAtlas2Based",forceAtlas2Based:{gravitationalConstant:-30,centralGravity:0.005,springLength:200,springConstant:0.05},stabilization:{iterations:200}}
-        });
-        network.once("stabilizationIterationsDone",()=>network.setOptions({physics:{enabled:false}}));
-        network.on("hoverNode",p=>{var n=visNodes.get(p.node);if(!n||n.shape!=="icon")return;visNodes.update({id:n.id,icon:{...n.icon,color:"#d4a44b"}});});
-        network.on("blurNode",p=>{var n=visNodes.get(p.node);if(!n||n.shape!=="icon")return;visNodes.update({id:n.id,icon:{...n.icon,color:n._iconOriginal}});});
-        network.on("click",p=>{if(p.nodes&&p.nodes.length>0){var id=p.nodes[0];var d=visNodes.get(id);if(!d)return;panelTitle.textContent=d.label||"Untitled";panelType.textContent=d._type||"node";panelDesc.textContent=d._desc||"No description available.";}});});
     }
+
     load(1000);
   })();
   </script>
