@@ -248,6 +248,8 @@
           size: 23,
           color: "#b4c8a8"
         };
+        // prevent vis-network from changing style on select/hover (which hid icon)
+        base.chosen = false;
       } else if (isAuthorLabel(primary)) {
         // Author: person icon, black
         base.shape = "icon";
@@ -257,6 +259,7 @@
           size: 23,
           color: "#000000"
         };
+        base.chosen = false;
       } else {
         // normal colored dot nodes (unchanged)
         base.color = {
