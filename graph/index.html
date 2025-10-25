@@ -141,6 +141,14 @@
       white-space: pre-wrap;
       line-height: 1.5;
     }
+  
+    /* Map Font Awesome 6 Free to 'FontAwesome' so vis-network icon shape works */
+    @font-face {
+      font-family: "FontAwesome";
+      font-weight: 900;
+      src: local("Font Awesome 6 Free");
+    }
+
   </style>
 
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
@@ -232,20 +240,20 @@
       };
 
       if (primary && primary.toUpperCase() === "PHILOSOPHY") {
-        // Render Philosophy nodes as brain icon but keep their original colour
+        // Philosophy: brain icon, keep green colour
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\\uf5dc", // brain icon
+          code: "\uf5dc", // brain
           size: 23,
           color: "#b4c8a8"
         };
       } else if (isAuthorLabel(primary)) {
-        // Render Author nodes as a small black person icon
+        // Author: person icon, black
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\\uf007", // user icon
+          code: "\uf007", // user
           size: 23,
           color: "#000000"
         };
