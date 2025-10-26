@@ -17,6 +17,7 @@
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
       --works:#d5c7b3;
+      --citation:#e0c27a;
     }
     html, body {
       height:100%;
@@ -97,7 +98,8 @@
     .philosophy-icon,
     .practice-icon,
     .principle-icon,
-    .works-icon {
+    .works-icon,
+    .citation-icon {
       width:12px;
       height:12px;
       display:inline-flex;
@@ -113,9 +115,10 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; } /* principle colour */
+    .principle-icon  { color:#e8b7b7; }
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
+    .citation-icon   { color:var(--citation); }
 
     .physics-toggle {
       display:flex;
@@ -148,7 +151,7 @@
     }
     .slider:before {
       position:absolute;
-      content:"";
+      content:""; 
       height:12px;
       width:12px;
       left:3px;
@@ -230,6 +233,7 @@
             <span class="practice-icon"><i class="fa-solid fa-sync-alt"></i></span><small>Practice</small>
             <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
             <span class="works-icon"><i class="fa-solid fa-book"></i></span><small>Works</small>
+            <span class="citation-icon"><i class="fa-solid fa-quote-left"></i></span><small>Citation</small>
           </div>
 
           <div class="physics-toggle">
@@ -267,11 +271,12 @@
     // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7", // Principle
+      PRINCIPLE  : "#e8b7b7",
       CONCEPT    : "#b8cde2",
       PRACTICE   : "#f3d9a4",
       RELATION   : "#d5c7b3",
-      WORKS      : "#d5c7b3"
+      WORKS      : "#d5c7b3",
+      CITATION   : "#e0c27a"
     };
 
     function getId(o){
@@ -307,11 +312,13 @@
       return primary && primary.toUpperCase() === "PRACTICE";
     }
     function isPrincipleLabel(primary){
-      // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
     function isWorksLabel(primary){
       return primary && primary.toUpperCase() === "WORKS";
+    }
+    function isCitationLabel(primary){
+      return primary && primary.toUpperCase() === "CITATION";
     }
 
     function buildNode(n){
@@ -326,7 +333,6 @@
       };
 
       if (isAuthorLabel(primary)) {
-        // Author -> person icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -335,7 +341,6 @@
           color: "#000"
         };
       } else if (isPhilosophyLabel(primary)) {
-        // Philosophy -> brain icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -344,16 +349,14 @@
           color: colors[primary] || "#b4c8a8"
         };
       } else if (isPracticeLabel(primary)) {
-        // Practice -> running/loop icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "",
+          code: "", // sync-alt
           size: 35,
           color: "#e8c670"
         };
       } else if (isPrincipleLabel(primary)) {
-        // Principle (PRINCIPLE) -> columns icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -362,7 +365,6 @@
           color: "#e8b7b7"
         };
       } else if (isWorksLabel(primary)) {
-        // Works -> book icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -370,8 +372,15 @@
           size: 30,
           color: colors[primary] || "#d5c7b3"
         };
+      } else if (isCitationLabel(primary)) {
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // quote-left
+          size: 28,
+          color: colors[primary] || "#e0c27a"
+        };
       } else {
-        // fallback coloured dot
         base.color = {
           background: colors[primary] || "#d5c7b3",
           border: "#333",
@@ -387,7 +396,6 @@
       return base;
     }
 
-    // fetch graph data
     fetch(endpoint + "?limit=1000")
       .then(r => r.json())
       .then(d => {
@@ -485,7 +493,6 @@
           }
         );
 
-        // click -> populate bottom panel
         net.on("click", p => {
           if (p.nodes.length > 0) {
             var n = nodesDS.get(p.nodes[0]);
@@ -495,7 +502,6 @@
           }
         });
 
-        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
