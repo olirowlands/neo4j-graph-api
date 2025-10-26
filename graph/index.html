@@ -92,12 +92,26 @@
       font-size:16px;
       font-weight:500;
     }
+    .search-box {
+      margin-top:6px;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .search-box input {
+      background:#555;
+      border:none;
+      border-radius:6px;
+      padding:6px 10px;
+      color:white;
+      font-size:14px;
+      width:180px;
+      outline:none;
+    }
+    .search-box input::placeholder {
+      color:#ccc;
+    }
 
-    .author-icon,
-    .philosophy-icon,
-    .practice-icon,
-    .principle-icon,
-    .works-icon {
+    .author-icon, .philosophy-icon, .practice-icon, .principle-icon, .works-icon {
       width:12px;
       height:12px;
       display:inline-flex;
@@ -110,57 +124,12 @@
       border:none;
       color:#000;
     }
-
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
     .principle-icon  { color:#e8b7b7; }
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
     .citation-icon   { color:#88c3c0; }
-
-    .physics-toggle {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-size:14px;
-      line-height:1.2;
-      font-weight:500;
-      color:#fff;
-      margin-top:4px;
-      justify-content:flex-end;
-      width:100%;
-    }
-    .switch {
-      position:relative;
-      display:inline-block;
-      width:34px;
-      height:18px;
-      flex-shrink:0;
-    }
-    .switch input {opacity:0;width:0;height:0;}
-    .slider {
-      position:absolute;
-      cursor:pointer;
-      top:0;left:0;right:0;bottom:0;
-      background-color:#555;
-      border-radius:10px;
-      transition:.2s;
-      border:1px solid #222;
-    }
-    .slider:before {
-      position:absolute;
-      content:"";
-      height:12px;
-      width:12px;
-      left:3px;
-      top:2px;
-      background-color:#fff;
-      border-radius:50%;
-      transition:.2s;
-      box-shadow:0 1px 2px rgba(0,0,0,.6);
-    }
-    input:checked + .slider {background-color:var(--highlight);border-color:#3a3a3a;}
-    input:checked + .slider:before {transform:translateX(16px);}
 
     #viz {
       flex:1;
@@ -234,12 +203,8 @@
             <span class="citation-icon"><i class="fa-solid fa-comment-dots"></i></span><small>Citation</small>
           </div>
 
-          <div class="physics-toggle">
-            <span>Dynamic graph</span>
-            <label class="switch">
-              <input type="checkbox" id="physicsToggle" checked />
-              <span class="slider"></span>
-            </label>
+          <div class="search-box">
+            <input id="searchInput" type="text" placeholder="Search nodes..." />
           </div>
         </div>
       </div>
@@ -251,7 +216,7 @@
       <div class="details-inner">
         <h2 id="details-title">Select a node</h2>
         <div class="meta" id="details-type">—</div>
-        <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
+        <div class="desc" id="details-desc">Click any node or search above to view details.</div>
       </div>
     </section>
   </div>
@@ -259,418 +224,63 @@
   <script>
   (function(){
     var endpoint = "/api/graph";
-
     var container = document.getElementById("viz");
-    var titleEl   = document.getElementById("details-title");
-    var typeEl    = document.getElementById("details-type");
-    var descEl    = document.getElementById("details-desc");
-    var toggle    = document.getElementById("physicsToggle");
+    var titleEl = document.getElementById("details-title");
+    var typeEl = document.getElementById("details-type");
+    var descEl = document.getElementById("details-desc");
+    var searchInput = document.getElementById("searchInput");
 
-    // palette map for groups
-    var colors = {
-      PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7",
-      CONCEPT    : "#b8cde2",
-      PRACTICE   : "#f3d9a4",
-      RELATION   : "#d5c7b3",
-      WORKS      : "#d5c7b3"
-    };
-
-    function getId(o){
-      return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;
-    }
-
-    function getLabel(o){
-      if (o && o.properties){
-        if (o.properties.title) return o.properties.title;
-        if (o.properties.name)  return o.properties.name;
-      }
-      return (o.labels && o.labels[0]) || "Node";
-    }
-
-    function getDesc(o){
-      var p = o.properties || {};
-      return (p.description && p.description.trim())
-        ? p.description
-        : "No description available.";
-    }
-
-    function getType(o){
-      return (o.labels && o.labels[0] ? o.labels[0].toLowerCase() : "node");
-    }
-
-    function isAuthorLabel(primary){
-      return primary && primary.toUpperCase() === "AUTHOR";
-    }
-    function isPhilosophyLabel(primary){
-      return primary && primary.toUpperCase() === "PHILOSOPHY";
-    }
-    function isPracticeLabel(primary){
-      return primary && primary.toUpperCase() === "PRACTICE";
-    }
-    function isPrincipleLabel(primary){
-      return primary && primary.toUpperCase() === "PRINCIPLE";
-    }
-    function isCitationLabel(primary){
-      return primary && primary.toUpperCase() === 'CITATION';
-    }
-    function isWorksLabel(primary){
-      return primary && primary.toUpperCase() === "WORKS";
-    }
-
-    // helper to decorate node label with +/- toggle indicator
-    function withToggleIndicator(baseLabel, expanded, hasChildren){
-      if(!hasChildren) return baseLabel;
-      return expanded ? (baseLabel + "  -") : (baseLabel + "  +");
-    }
-
-    function buildNode(n){
-      var primary = (n.labels && n.labels[0]) || "Node";
-
-      var base = {
-        id    : getId(n),
-        label : getLabel(n),
-        group : primary,
-        _desc : getDesc(n),
-        _type : getType(n),
-
-        _expanded:false,
-        _children:new Set(),
-        _baseLabel:null
-      };
-
-      if (isAuthorLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#000"
-        };
-      } else if (isPhilosophyLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: colors[primary] || "#b4c8a8"
-        };
-      } else if (isPracticeLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: "#e8c670"
-        };
-      } else if (isPrincipleLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#e8b7b7"
-        };
-      } else if (isCitationLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#88c3c0"
-        };
-      } else if (isWorksLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: colors[primary] || "#d5c7b3"
-        };
-      } else {
-        base.color = {
-          background: colors[primary] || "#d5c7b3",
-          border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover:     { background: "#d4a44b", border: "#3a3a3a" }
-        };
-        base.shape = "dot";
-        base.size = 23;
-        base.borderWidth = 2;
-        base.font = { color:"#000", size:16, face:"Inter, system-ui" };
-      }
-
-      return base;
-    }
-
-    // global-ish structures
-    var nodeMap   = new Map(); // uuid -> nodeData
-    var edgeMap   = new Map(); // edgeId -> edgeData
-    var adjIndex  = new Map(); // uuid -> Set of neighbour uuids
-    var edgeIndex = new Map(); // parentUuid -> Map(childUuid -> Set(edgeIds))
-    var ownership = new Map(); // childUuid -> Set(parentUuids)
-
-    function addOwnership(parentId, childId){
-      if(!ownership.has(childId)) ownership.set(childId, new Set());
-      ownership.get(childId).add(parentId);
-    }
-    function removeOwnership(parentId, childId){
-      if(!ownership.has(childId)) return;
-      ownership.get(childId).delete(parentId);
-    }
-    function hasAnyOwner(childId){
-      return ownership.has(childId) && ownership.get(childId).size > 0;
-    }
-
-    var nodesDS, edgesDS, net;
-
-    function indexEdge(edgeObj){
-      var f = edgeObj.from;
-      var t = edgeObj.to;
-      if(!adjIndex.has(f)) adjIndex.set(f, new Set());
-      if(!adjIndex.has(t)) adjIndex.set(t, new Set());
-      adjIndex.get(f).add(t);
-      adjIndex.get(t).add(f);
-
-      if(!edgeIndex.has(f)) edgeIndex.set(f, new Map());
-      if(!edgeIndex.get(f).has(t)) edgeIndex.get(f).set(t, new Set());
-      edgeIndex.get(f).get(t).add(edgeObj.id);
-
-      if(!edgeIndex.has(t)) edgeIndex.set(t, new Map());
-      if(!edgeIndex.get(t).has(f)) edgeIndex.get(t).set(f, new Set());
-      edgeIndex.get(t).get(f).add(edgeObj.id);
-    }
-
-    function getBaseNodeLabel(n){
-      if(!n._baseLabel) n._baseLabel = n.label.replace(/\s[+-]$/,'');
-      return n._baseLabel;
-    }
-
-    function updateNodeToggleIndicator(nodeId){
-      var n = nodeMap.get(nodeId);
-      if(!n) return;
-      var neighbours = adjIndex.get(nodeId) || new Set();
-      var hasChildren = neighbours.size > 0;
-      var newLabel = withToggleIndicator(
-        getBaseNodeLabel(n),
-        n._expanded,
-        hasChildren
-      );
-      nodesDS.update({id: nodeId, label: newLabel});
-    }
-
-    function expandNode(nodeId){
-      var n = nodeMap.get(nodeId);
-      if(!n) return;
-
-      var neighbours = adjIndex.get(nodeId) || new Set();
-      neighbours.forEach(childId => {
-        if(childId === nodeId) return;
-
-        addOwnership(nodeId, childId);
-        n._children.add(childId);
-
-        if(!nodesDS.get(childId)){
-          var childNodeObj = nodeMap.get(childId);
-          if(childNodeObj){
-            nodesDS.add({
-              ...childNodeObj,
-              label: withToggleIndicator(
-                getBaseNodeLabel(childNodeObj),
-                childNodeObj._expanded,
-                (adjIndex.get(childId) || new Set()).size > 0
-              )
-            });
-          }
-        }
-
-        if(edgeIndex.has(nodeId) && edgeIndex.get(nodeId).has(childId)){
-          edgeIndex.get(nodeId).get(childId).forEach(eid => {
-            if(!edgesDS.get(eid)){
-              edgesDS.add(edgeMap.get(eid));
-            }
-          });
-        }
-      });
-
-      n._expanded = true;
-      updateNodeToggleIndicator(nodeId);
-    }
-
-    function collapseNode(nodeId){
-      var n = nodeMap.get(nodeId);
-      if(!n) return;
-
-      n._children.forEach(childId => {
-        removeOwnership(nodeId, childId);
-
-        if(!hasAnyOwner(childId)){
-          if(nodesDS.get(childId)){
-            nodesDS.remove(childId);
-          }
-
-          if(edgeIndex.has(nodeId) && edgeIndex.get(nodeId).has(childId)){
-            edgeIndex.get(nodeId).get(childId).forEach(eid => {
-              if(edgesDS.get(eid)){
-                edgesDS.remove(eid);
-              }
-            });
-          }
-        }
-      });
-
-      n._children.clear();
-      n._expanded = false;
-      updateNodeToggleIndicator(nodeId);
-    }
-
-    function toggleNode(nodeId){
-      var n = nodeMap.get(nodeId);
-      if(!n) return;
-
-      if(n._expanded){
-        collapseNode(nodeId);
-      } else {
-        expandNode(nodeId);
-      }
-    }
+    function getId(o){return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;}
+    function getLabel(o){if(o&&o.properties){return o.properties.name||o.properties.title||"Node";}return (o.labels&&o.labels[0])||"Node";}
+    function getDesc(o){return (o.properties && o.properties.description)||"No description available.";}
+    function getType(o){return (o.labels && o.labels[0]) ? o.labels[0].toLowerCase() : "node";}
 
     fetch(endpoint + "?limit=1000")
-      .then(r => r.json())
-      .then(d => {
-        var rows = (d && d.data && d.data.values) || [];
-
-        var rawNodes = [];
-        var rawEdges = [];
-
-        rows.forEach(row => {
-          if (row[0]) rawNodes.push(row[0]);
-          if (row[2]) rawNodes.push(row[2]);
-          if (row[1]) rawEdges.push(row[1]);
-        });
-
-        rawNodes.forEach(n => {
-          var i = getId(n);
-          if (i && !nodeMap.has(i)) {
-            nodeMap.set(i, buildNode(n));
+      .then(r=>r.json())
+      .then(d=>{
+        var rows=(d&&d.data&&d.data.values)||[];
+        var nodes=new Map(),edges=[];
+        rows.forEach(row=>{
+          if(row[0]) nodes.set(getId(row[0]),{id:getId(row[0]),label:getLabel(row[0]),_desc:getDesc(row[0]),_type:getType(row[0])});
+          if(row[2]) nodes.set(getId(row[2]),{id:getId(row[2]),label:getLabel(row[2]),_desc:getDesc(row[2]),_type:getType(row[2])});
+          if(row[1]){
+            var e=row[1];
+            edges.push({id:getId(e),from:e.startNodeElementId||e.start,to:e.endNodeElementId||e.end,arrows:"to"});
           }
         });
 
-        rawEdges.forEach(e => {
-          var i = getId(e),
-              f = e.startNodeElementId || e.start || e.from,
-              t = e.endNodeElementId   || e.end   || e.to;
+        var nodesDS=new vis.DataSet(Array.from(nodes.values()));
+        var edgesDS=new vis.DataSet(edges);
+        var net=new vis.Network(container,{nodes:nodesDS,edges:edgesDS},{interaction:{hover:true},physics:{enabled:true}});
 
-          if (i && f && t && !edgeMap.has(i)) {
-            var lab = e.type
-              ? "<i>" + e.type
-                  .replace(/_/g," ")
-                  .toLowerCase()
-                  .replace(/^\w/, c => c.toUpperCase()) + "</i>"
-              : "";
-
-            var edgeObj = {
-              id: i,
-              from: f,
-              to: t,
-              label: lab,
-              arrows: "to",
-              length: 260,
-              color: {
-                color: "#d5c7b3",
-                highlight: "#d4a44b",
-                hover: "#d4a44b"
-              },
-              font: {
-                multi: "html",
-                face: "Inter",
-                color: "#000"
-              },
-              smooth: false,
-              width:1.5
-            };
-            edgeMap.set(i, edgeObj);
-            indexEdge(edgeObj);
+        // Show node details
+        net.on("click",params=>{
+          if(params.nodes.length>0){
+            var n=nodesDS.get(params.nodes[0]);
+            titleEl.textContent=n.label;
+            typeEl.textContent=n._type;
+            descEl.textContent=n._desc;
           }
         });
 
-        // create datasets
-        nodesDS = new vis.DataSet([]);
-        edgesDS = new vis.DataSet([]);
-
-        // add all nodes as *expanded* initially,
-        // so they render with "-" instead of "+"
-        nodeMap.forEach((nObj, uuid) => {
-          nObj._expanded = true;
-          nodesDS.add({
-            ...nObj,
-            label: withToggleIndicator(
-              getBaseNodeLabel(nObj),
-              true,
-              (adjIndex.get(uuid) || new Set()).size > 0
-            )
-          });
-        });
-
-        // add edges
-        edgeMap.forEach((eObj, eid) => {
-          edgesDS.add(eObj);
-        });
-
-        // network
-        net = new vis.Network(
-          container,
-          { nodes: nodesDS, edges: edgesDS },
-          {
-            nodes: {
-              shape: "dot",
-              size: 23,
-              borderWidth: 2,
-              font: { color:"#000", size:16, face:"Inter, system-ui" }
-            },
-            edges: {
-              width: 1.5,
-              color: {
-                color:"#d5c7b3",
-                highlight:"#d4a44b",
-                hover:"#d4a44b"
-              },
-              smooth: false,
-              font: { multi:"html", face:"Inter", color:"#000" }
-            },
-            interaction: { hover:true, tooltipDelay:150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -30,
-                centralGravity: 0.0005,
-                springLength: 280,
-                springConstant: 0.03,
-                avoidOverlap: 1
-              },
-              stabilization: { iterations: 400 }
+        // Search logic
+        searchInput.addEventListener("keypress",function(e){
+          if(e.key==="Enter"){
+            var query=searchInput.value.trim().toLowerCase();
+            if(!query) return;
+            var matches=nodesDS.get().filter(n=>n.label.toLowerCase().includes(query));
+            if(matches.length>0){
+              var found=matches[0];
+              net.focus(found.id,{scale:1.5,animation:true});
+              titleEl.textContent=found.label;
+              typeEl.textContent=found._type;
+              descEl.textContent=found._desc;
+              nodesDS.update({id:found.id,color:{background:"#d4a44b"}});
+              setTimeout(()=>nodesDS.update({id:found.id,color:undefined}),1500);
+            } else {
+              alert("No matching nodes found.");
             }
           }
-        );
-
-        // click -> show details and toggle expand/collapse
-        net.on("click", p => {
-          if (p.nodes.length > 0) {
-            var clickedId = p.nodes[0];
-            var n = nodeMap.get(clickedId);
-
-            titleEl.textContent = getBaseNodeLabel(n);
-            typeEl.textContent  = n._type;
-            descEl.textContent  = n._desc;
-
-            toggleNode(clickedId);
-          }
-        });
-
-        // physics toggle
-        toggle.addEventListener("change", () => {
-          net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
   })();
