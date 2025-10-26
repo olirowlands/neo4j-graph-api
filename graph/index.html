@@ -220,15 +220,6 @@
     function build(n){var p=(n.labels&&n.labels[0])||"Node",b={id:id(n),label:label(n),group:p,_desc:descf(n),_type:typ(n)};
       if(author(p)){b.shape="icon";b.icon={face:"FontAwesome",code:"\uf007",size:23,color:"#000"};}
       else if(phil(p)){b.shape="icon";b.icon={face:"FontAwesome",code:"\uf5dc",size:35,color:colors[p]||"#b4c8a8"};}
-      } else if (isPracticeLabel(primary)) {
-        // Render Practice nodes as a yellow meditation icon
-        base.shape = "icon";
-        base.icon = {
-        face: "FontAwesome",
-        code: "\uf2f1", // person-praying icon
-        size: 35,
-        color: labelColor[primary] || "#f3d9a4" // keep the practice yellow
-    };
       else{b.color={background:colors[p]||"#d5c7b3",border:"#333",highlight:{background:"#d4a44b",border:"#3a3a3a"},hover:{background:"#d4a44b",border:"#3a3a3a"}};}
       return b;}
     fetch(endpoint+"?limit=1000").then(r=>r.json()).then(d=>{
