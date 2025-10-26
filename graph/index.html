@@ -432,6 +432,25 @@
         var nodesDS = new vis.DataSet([...nodeMap.values()]);
         var edgesDS = new vis.DataSet([...edgeMap.values()]);
 
+        // tuned physics
+        var physicsLive = {
+          enabled: true,
+          solver: "forceAtlas2Based",
+          forceAtlas2Based: {
+            gravitationalConstant: -20,
+            centralGravity: 0.02,
+            springLength: 260,
+            springConstant: 0.03,
+            avoidOverlap: 1.0
+          },
+          maxVelocity: 30,
+          damping: 0.6,
+          stabilization: {
+            enabled: true,
+            iterations: 400
+          }
+        };
+
         var net = new vis.Network(
           container,
           { nodes: nodesDS, edges: edgesDS },
@@ -453,18 +472,7 @@
               font: { multi:"html", face:"Inter", color:"#000" }
             },
             interaction: { hover:true, tooltipDelay:150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -20,
-                centralGravity: 0.002,
-                springLength: 260,
-                springConstant: 0.03,
-                avoidOverlap: 1
-              },
-              stabilization: { iterations: 400 }
-            }
+            physics: physicsLive
           }
         );
 
@@ -478,9 +486,13 @@
           }
         });
 
-        // physics toggle
+        // physics toggle: freeze vs resume with same tuned config
         toggle.addEventListener("change", () => {
-          net.setOptions({ physics:{ enabled: toggle.checked } });
+          if (toggle.checked) {
+            net.setOptions({ physics: physicsLive });
+          } else {
+            net.setOptions({ physics:{ enabled:false } });
+          }
         });
       });
   })();
