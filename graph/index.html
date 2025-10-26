@@ -111,7 +111,7 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; } /* DOGMA colour */
+    .principle-icon  { color:#e8b7b7; } /* Now changed to principle colour */
     .author-icon     { color:#000000; }
 
     .physics-toggle {
@@ -263,7 +263,7 @@
     // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
-      DOGMA      : "#e8b7b7", // now "Principle"
+      PRINCIPLE      : "#e8b7b7", // now "Principle"
       CONCEPT    : "#b8cde2",
       PRACTICE   : "#f3d9a4",
       RELATION   : "#d5c7b3"
@@ -301,9 +301,9 @@
     function isPracticeLabel(primary){
       return primary && primary.toUpperCase() === "PRACTICE";
     }
-    function isDogmaLabel(primary){
+    function isPrincipleLabel(primary){
       // "DOGMA" nodes are now treated visually as "Principle"
-      return primary && primary.toUpperCase() === "DOGMA";
+      return primary && primary.toUpperCase() === "Principle";
     }
 
     function buildNode(n){
@@ -344,8 +344,8 @@
           size: 35,
           color: "#e8c670"
         };
-      } else if (isDogmaLabel(primary)) {
-        // Principle (DOGMA) -> columns icon
+      } else if (isPrincipleLabel(primary)) {
+        // Principle (PRINCIPLE) -> columns icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
