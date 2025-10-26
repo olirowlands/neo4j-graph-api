@@ -116,6 +116,7 @@
     .principle-icon  { color:#e8b7b7; } /* principle colour */
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
+    .citation-icon   { color:#88c3c0; }
 
     .physics-toggle {
       display:flex;
@@ -230,6 +231,7 @@
             <span class="practice-icon"><i class="fa-solid fa-sync-alt"></i></span><small>Practice</small>
             <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
             <span class="works-icon"><i class="fa-solid fa-book"></i></span><small>Works</small>
+            <span class="citation-icon"><i class="fa-solid fa-comment-dots"></i></span><small>Citation</small>
           </div>
 
           <div class="physics-toggle">
@@ -310,7 +312,11 @@
       // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
-    function isWorksLabel(primary){
+        function isCitationLabel(primary){
+      return primary && primary.toUpperCase() === 'CITATION';
+    }
+
+function isWorksLabel(primary){
       return primary && primary.toUpperCase() === "WORKS";
     }
 
@@ -360,6 +366,15 @@
           code: "", // columns
           size: 30,
           color: "#e8b7b7"
+        };
+      } else if (isCitationLabel(primary)) {
+        // Citation -> speech bubble icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf4ad", // comment-dots
+          size: 30,
+          color: "#88c3c0"
         };
       } else if (isWorksLabel(primary)) {
         // Works -> book icon
