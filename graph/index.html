@@ -594,24 +594,30 @@
           }
         });
 
+        // create datasets
         nodesDS = new vis.DataSet([]);
         edgesDS = new vis.DataSet([]);
 
+        // add all nodes as *expanded* initially,
+        // so they render with "-" instead of "+"
         nodeMap.forEach((nObj, uuid) => {
+          nObj._expanded = true;
           nodesDS.add({
             ...nObj,
             label: withToggleIndicator(
               getBaseNodeLabel(nObj),
-              nObj._expanded,
+              true,
               (adjIndex.get(uuid) || new Set()).size > 0
             )
           });
         });
 
+        // add edges
         edgeMap.forEach((eObj, eid) => {
           edgesDS.add(eObj);
         });
 
+        // network
         net = new vis.Network(
           container,
           { nodes: nodesDS, edges: edgesDS },
@@ -648,6 +654,7 @@
           }
         );
 
+        // click -> show details and toggle expand/collapse
         net.on("click", p => {
           if (p.nodes.length > 0) {
             var clickedId = p.nodes[0];
@@ -661,6 +668,7 @@
           }
         });
 
+        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
