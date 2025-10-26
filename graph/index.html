@@ -113,7 +113,7 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; } /* principle colour */
+    .principle-icon  { color:#e8b7b7; }
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
     .citation-icon   { color:#88c3c0; }
@@ -269,7 +269,7 @@
     // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7", // Principle
+      PRINCIPLE  : "#e8b7b7",
       CONCEPT    : "#b8cde2",
       PRACTICE   : "#f3d9a4",
       RELATION   : "#d5c7b3",
@@ -309,15 +309,19 @@
       return primary && primary.toUpperCase() === "PRACTICE";
     }
     function isPrincipleLabel(primary){
-      // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
-        function isCitationLabel(primary){
+    function isCitationLabel(primary){
       return primary && primary.toUpperCase() === 'CITATION';
     }
-
-function isWorksLabel(primary){
+    function isWorksLabel(primary){
       return primary && primary.toUpperCase() === "WORKS";
+    }
+
+    // helper to decorate node label with +/- toggle indicator
+    function withToggleIndicator(baseLabel, expanded, hasChildren){
+      if(!hasChildren) return baseLabel;
+      return expanded ? (baseLabel + "  -") : (baseLabel + "  +");
     }
 
     function buildNode(n){
@@ -328,29 +332,30 @@ function isWorksLabel(primary){
         label : getLabel(n),
         group : primary,
         _desc : getDesc(n),
-        _type : getType(n)
+        _type : getType(n),
+
+        _expanded:false,
+        _children:new Set(),
+        _baseLabel:null
       };
 
       if (isAuthorLabel(primary)) {
-        // Author -> person icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // user
+          code: "",
           size: 30,
           color: "#000"
         };
       } else if (isPhilosophyLabel(primary)) {
-        // Philosophy -> brain icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // brain
+          code: "",
           size: 35,
           color: colors[primary] || "#b4c8a8"
         };
       } else if (isPracticeLabel(primary)) {
-        // Practice -> running/loop icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -359,34 +364,30 @@ function isWorksLabel(primary){
           color: "#e8c670"
         };
       } else if (isPrincipleLabel(primary)) {
-        // Principle (PRINCIPLE) -> columns icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // columns
+          code: "",
           size: 30,
           color: "#e8b7b7"
         };
       } else if (isCitationLabel(primary)) {
-        // Citation -> speech bubble icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf4ad", // comment-dots
+          code: "",
           size: 30,
           color: "#88c3c0"
         };
       } else if (isWorksLabel(primary)) {
-        // Works -> book icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // book
+          code: "",
           size: 30,
           color: colors[primary] || "#d5c7b3"
         };
       } else {
-        // fallback coloured dot
         base.color = {
           background: colors[primary] || "#d5c7b3",
           border: "#333",
@@ -402,14 +403,143 @@ function isWorksLabel(primary){
       return base;
     }
 
-    // fetch graph data
+    // global-ish structures
+    var nodeMap   = new Map(); // uuid -> nodeData
+    var edgeMap   = new Map(); // edgeId -> edgeData
+    var adjIndex  = new Map(); // uuid -> Set of neighbour uuids
+    var edgeIndex = new Map(); // parentUuid -> Map(childUuid -> Set(edgeIds))
+    var ownership = new Map(); // childUuid -> Set(parentUuids)
+
+    function addOwnership(parentId, childId){
+      if(!ownership.has(childId)) ownership.set(childId, new Set());
+      ownership.get(childId).add(parentId);
+    }
+    function removeOwnership(parentId, childId){
+      if(!ownership.has(childId)) return;
+      ownership.get(childId).delete(parentId);
+    }
+    function hasAnyOwner(childId){
+      return ownership.has(childId) && ownership.get(childId).size > 0;
+    }
+
+    var nodesDS, edgesDS, net;
+
+    function indexEdge(edgeObj){
+      var f = edgeObj.from;
+      var t = edgeObj.to;
+      if(!adjIndex.has(f)) adjIndex.set(f, new Set());
+      if(!adjIndex.has(t)) adjIndex.set(t, new Set());
+      adjIndex.get(f).add(t);
+      adjIndex.get(t).add(f);
+
+      if(!edgeIndex.has(f)) edgeIndex.set(f, new Map());
+      if(!edgeIndex.get(f).has(t)) edgeIndex.get(f).set(t, new Set());
+      edgeIndex.get(f).get(t).add(edgeObj.id);
+
+      if(!edgeIndex.has(t)) edgeIndex.set(t, new Map());
+      if(!edgeIndex.get(t).has(f)) edgeIndex.get(t).set(f, new Set());
+      edgeIndex.get(t).get(f).add(edgeObj.id);
+    }
+
+    function getBaseNodeLabel(n){
+      if(!n._baseLabel) n._baseLabel = n.label.replace(/\s[+-]$/,'');
+      return n._baseLabel;
+    }
+
+    function updateNodeToggleIndicator(nodeId){
+      var n = nodeMap.get(nodeId);
+      if(!n) return;
+      var neighbours = adjIndex.get(nodeId) || new Set();
+      var hasChildren = neighbours.size > 0;
+      var newLabel = withToggleIndicator(
+        getBaseNodeLabel(n),
+        n._expanded,
+        hasChildren
+      );
+      nodesDS.update({id: nodeId, label: newLabel});
+    }
+
+    function expandNode(nodeId){
+      var n = nodeMap.get(nodeId);
+      if(!n) return;
+
+      var neighbours = adjIndex.get(nodeId) || new Set();
+      neighbours.forEach(childId => {
+        if(childId === nodeId) return;
+
+        addOwnership(nodeId, childId);
+        n._children.add(childId);
+
+        if(!nodesDS.get(childId)){
+          var childNodeObj = nodeMap.get(childId);
+          if(childNodeObj){
+            nodesDS.add({
+              ...childNodeObj,
+              label: withToggleIndicator(
+                getBaseNodeLabel(childNodeObj),
+                childNodeObj._expanded,
+                (adjIndex.get(childId) || new Set()).size > 0
+              )
+            });
+          }
+        }
+
+        if(edgeIndex.has(nodeId) && edgeIndex.get(nodeId).has(childId)){
+          edgeIndex.get(nodeId).get(childId).forEach(eid => {
+            if(!edgesDS.get(eid)){
+              edgesDS.add(edgeMap.get(eid));
+            }
+          });
+        }
+      });
+
+      n._expanded = true;
+      updateNodeToggleIndicator(nodeId);
+    }
+
+    function collapseNode(nodeId){
+      var n = nodeMap.get(nodeId);
+      if(!n) return;
+
+      n._children.forEach(childId => {
+        removeOwnership(nodeId, childId);
+
+        if(!hasAnyOwner(childId)){
+          if(nodesDS.get(childId)){
+            nodesDS.remove(childId);
+          }
+
+          if(edgeIndex.has(nodeId) && edgeIndex.get(nodeId).has(childId)){
+            edgeIndex.get(nodeId).get(childId).forEach(eid => {
+              if(edgesDS.get(eid)){
+                edgesDS.remove(eid);
+              }
+            });
+          }
+        }
+      });
+
+      n._children.clear();
+      n._expanded = false;
+      updateNodeToggleIndicator(nodeId);
+    }
+
+    function toggleNode(nodeId){
+      var n = nodeMap.get(nodeId);
+      if(!n) return;
+
+      if(n._expanded){
+        collapseNode(nodeId);
+      } else {
+        expandNode(nodeId);
+      }
+    }
+
     fetch(endpoint + "?limit=1000")
       .then(r => r.json())
       .then(d => {
         var rows = (d && d.data && d.data.values) || [];
 
-        var nodeMap = new Map();
-        var edgeMap = new Map();
         var rawNodes = [];
         var rawEdges = [];
 
@@ -439,7 +569,7 @@ function isWorksLabel(primary){
                   .replace(/^\w/, c => c.toUpperCase()) + "</i>"
               : "";
 
-            edgeMap.set(i, {
+            var edgeObj = {
               id: i,
               from: f,
               to: t,
@@ -456,15 +586,33 @@ function isWorksLabel(primary){
                 face: "Inter",
                 color: "#000"
               },
-              smooth: false
-            });
+              smooth: false,
+              width:1.5
+            };
+            edgeMap.set(i, edgeObj);
+            indexEdge(edgeObj);
           }
         });
 
-        var nodesDS = new vis.DataSet([...nodeMap.values()]);
-        var edgesDS = new vis.DataSet([...edgeMap.values()]);
+        nodesDS = new vis.DataSet([]);
+        edgesDS = new vis.DataSet([]);
 
-        var net = new vis.Network(
+        nodeMap.forEach((nObj, uuid) => {
+          nodesDS.add({
+            ...nObj,
+            label: withToggleIndicator(
+              getBaseNodeLabel(nObj),
+              nObj._expanded,
+              (adjIndex.get(uuid) || new Set()).size > 0
+            )
+          });
+        });
+
+        edgeMap.forEach((eObj, eid) => {
+          edgesDS.add(eObj);
+        });
+
+        net = new vis.Network(
           container,
           { nodes: nodesDS, edges: edgesDS },
           {
@@ -500,17 +648,19 @@ function isWorksLabel(primary){
           }
         );
 
-        // click -> populate bottom panel
         net.on("click", p => {
           if (p.nodes.length > 0) {
-            var n = nodesDS.get(p.nodes[0]);
-            titleEl.textContent = n.label;
+            var clickedId = p.nodes[0];
+            var n = nodeMap.get(clickedId);
+
+            titleEl.textContent = getBaseNodeLabel(n);
             typeEl.textContent  = n._type;
             descEl.textContent  = n._desc;
+
+            toggleNode(clickedId);
           }
         });
 
-        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
