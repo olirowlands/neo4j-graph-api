@@ -17,7 +17,7 @@
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
       --works:#d5c7b3;
-      --citation:#e0c27a;
+      --citation:#d9b667;
     }
     html, body {
       height:100%;
@@ -151,7 +151,7 @@
     }
     .slider:before {
       position:absolute;
-      content:""; 
+      content:"";
       height:12px;
       width:12px;
       left:3px;
@@ -233,7 +233,7 @@
             <span class="practice-icon"><i class="fa-solid fa-sync-alt"></i></span><small>Practice</small>
             <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
             <span class="works-icon"><i class="fa-solid fa-book"></i></span><small>Works</small>
-            <span class="citation-icon"><i class="fa-solid fa-quote-left"></i></span><small>Citation</small>
+            <span class="citation-icon"><i class="fa-solid fa-comment"></i></span><small>Citation</small>
           </div>
 
           <div class="physics-toggle">
@@ -268,7 +268,6 @@
     var descEl    = document.getElementById("details-desc");
     var toggle    = document.getElementById("physicsToggle");
 
-    // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
       PRINCIPLE  : "#e8b7b7",
@@ -276,7 +275,7 @@
       PRACTICE   : "#f3d9a4",
       RELATION   : "#d5c7b3",
       WORKS      : "#d5c7b3",
-      CITATION   : "#e0c27a"
+      CITATION   : "#d9b667"
     };
 
     function getId(o){
@@ -302,24 +301,12 @@
       return (o.labels && o.labels[0] ? o.labels[0].toLowerCase() : "node");
     }
 
-    function isAuthorLabel(primary){
-      return primary && primary.toUpperCase() === "AUTHOR";
-    }
-    function isPhilosophyLabel(primary){
-      return primary && primary.toUpperCase() === "PHILOSOPHY";
-    }
-    function isPracticeLabel(primary){
-      return primary && primary.toUpperCase() === "PRACTICE";
-    }
-    function isPrincipleLabel(primary){
-      return primary && primary.toUpperCase() === "PRINCIPLE";
-    }
-    function isWorksLabel(primary){
-      return primary && primary.toUpperCase() === "WORKS";
-    }
-    function isCitationLabel(primary){
-      return primary && primary.toUpperCase() === "CITATION";
-    }
+    function isAuthorLabel(primary){ return primary && primary.toUpperCase() === "AUTHOR"; }
+    function isPhilosophyLabel(primary){ return primary && primary.toUpperCase() === "PHILOSOPHY"; }
+    function isPracticeLabel(primary){ return primary && primary.toUpperCase() === "PRACTICE"; }
+    function isPrincipleLabel(primary){ return primary && primary.toUpperCase() === "PRINCIPLE"; }
+    function isWorksLabel(primary){ return primary && primary.toUpperCase() === "WORKS"; }
+    function isCitationLabel(primary){ return primary && primary.toUpperCase() === "CITATION"; }
 
     function buildNode(n){
       var primary = (n.labels && n.labels[0]) || "Node";
@@ -334,52 +321,22 @@
 
       if (isAuthorLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // user
-          size: 30,
-          color: "#000"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:30, color:"#000" };
       } else if (isPhilosophyLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // brain
-          size: 35,
-          color: colors[primary] || "#b4c8a8"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:35, color:colors[primary] };
       } else if (isPracticeLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // sync-alt
-          size: 35,
-          color: "#e8c670"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:35, color:"#e8c670" };
       } else if (isPrincipleLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // columns
-          size: 30,
-          color: "#e8b7b7"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:30, color:"#e8b7b7" };
       } else if (isWorksLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // book
-          size: 30,
-          color: colors[primary] || "#d5c7b3"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:30, color:colors[primary] };
       } else if (isCitationLabel(primary)) {
         base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "", // quote-left
-          size: 28,
-          color: colors[primary] || "#e0c27a"
-        };
+        base.icon = { face:"FontAwesome", code:"", size:28, color:colors[primary] }; // comment
       } else {
         base.color = {
           background: colors[primary] || "#d5c7b3",
@@ -392,7 +349,6 @@
         base.borderWidth = 2;
         base.font = { color:"#000", size:16, face:"Inter, system-ui" };
       }
-
       return base;
     }
 
@@ -400,111 +356,28 @@
       .then(r => r.json())
       .then(d => {
         var rows = (d && d.data && d.data.values) || [];
-
         var nodeMap = new Map();
         var edgeMap = new Map();
-        var rawNodes = [];
-        var rawEdges = [];
-
-        rows.forEach(row => {
-          if (row[0]) rawNodes.push(row[0]);
-          if (row[2]) rawNodes.push(row[2]);
-          if (row[1]) rawEdges.push(row[1]);
-        });
-
-        rawNodes.forEach(n => {
-          var i = getId(n);
-          if (i && !nodeMap.has(i)) {
-            nodeMap.set(i, buildNode(n));
-          }
-        });
-
+        var rawNodes = [], rawEdges = [];
+        rows.forEach(row => { if(row[0]) rawNodes.push(row[0]); if(row[2]) rawNodes.push(row[2]); if(row[1]) rawEdges.push(row[1]); });
+        rawNodes.forEach(n => { var i=getId(n); if(i && !nodeMap.has(i)) nodeMap.set(i, buildNode(n)); });
         rawEdges.forEach(e => {
-          var i = getId(e),
-              f = e.startNodeElementId || e.start || e.from,
-              t = e.endNodeElementId   || e.end   || e.to;
-
-          if (i && f && t && !edgeMap.has(i)) {
-            var lab = e.type
-              ? "<i>" + e.type
-                  .replace(/_/g," ")
-                  .toLowerCase()
-                  .replace(/^\w/, c => c.toUpperCase()) + "</i>"
-              : "";
-
-            edgeMap.set(i, {
-              id: i,
-              from: f,
-              to: t,
-              label: lab,
-              arrows: "to",
-              length: 260,
-              color: {
-                color: "#d5c7b3",
-                highlight: "#d4a44b",
-                hover: "#d4a44b"
-              },
-              font: {
-                multi: "html",
-                face: "Inter",
-                color: "#000"
-              },
-              smooth: false
-            });
+          var i=getId(e), f=e.startNodeElementId||e.start||e.from, t=e.endNodeElementId||e.end||e.to;
+          if(i && f && t && !edgeMap.has(i)){
+            var lab=e.type?("<i>"+e.type.replace(/_/g," ").toLowerCase().replace(/^\w/,c=>c.toUpperCase())+"</i>"):"";
+            edgeMap.set(i,{id:i,from:f,to:t,label:lab,arrows:"to",length:260,color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},font:{multi:"html",face:"Inter",color:"#000"},smooth:false});
           }
         });
-
-        var nodesDS = new vis.DataSet([...nodeMap.values()]);
-        var edgesDS = new vis.DataSet([...edgeMap.values()]);
-
-        var net = new vis.Network(
-          container,
-          { nodes: nodesDS, edges: edgesDS },
-          {
-            nodes: {
-              shape: "dot",
-              size: 23,
-              borderWidth: 2,
-              font: { color:"#000", size:16, face:"Inter, system-ui" }
-            },
-            edges: {
-              width: 1.5,
-              color: {
-                color:"#d5c7b3",
-                highlight:"#d4a44b",
-                hover:"#d4a44b"
-              },
-              smooth: false,
-              font: { multi:"html", face:"Inter", color:"#000" }
-            },
-            interaction: { hover:true, tooltipDelay:150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -30,
-                centralGravity: 0.0005,
-                springLength: 280,
-                springConstant: 0.03,
-                avoidOverlap: 1
-              },
-              stabilization: { iterations: 400 }
-            }
-          }
-        );
-
-        net.on("click", p => {
-          if (p.nodes.length > 0) {
-            var n = nodesDS.get(p.nodes[0]);
-            titleEl.textContent = n.label;
-            typeEl.textContent  = n._type;
-            descEl.textContent  = n._desc;
-          }
+        var nodesDS=new vis.DataSet([...nodeMap.values()]);
+        var edgesDS=new vis.DataSet([...edgeMap.values()]);
+        var net=new vis.Network(container,{nodes:nodesDS,edges:edgesDS},{
+          nodes:{shape:"dot",size:23,borderWidth:2,font:{color:"#000",size:16,face:"Inter, system-ui"}},
+          edges:{width:1.5,color:{color:"#d5c7b3",highlight:"#d4a44b",hover:"#d4a44b"},smooth:false,font:{multi:"html",face:"Inter",color:"#000"}},
+          interaction:{hover:true,tooltipDelay:150},
+          physics:{enabled:true,solver:"forceAtlas2Based",forceAtlas2Based:{gravitationalConstant:-30,centralGravity:0.0005,springLength:280,springConstant:0.03,avoidOverlap:1},stabilization:{iterations:400}}
         });
-
-        toggle.addEventListener("change", () => {
-          net.setOptions({ physics:{ enabled: toggle.checked } });
-        });
+        net.on("click",p=>{if(p.nodes.length>0){var n=nodesDS.get(p.nodes[0]);titleEl.textContent=n.label;typeEl.textContent=n._type;descEl.textContent=n._desc;}});
+        toggle.addEventListener("change",()=>{net.setOptions({physics:{enabled:toggle.checked}});});
       });
   })();
   </script>
