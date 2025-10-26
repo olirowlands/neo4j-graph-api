@@ -16,6 +16,7 @@
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
+      --works:#4B3FCB;
     }
     html, body {
       height:100%;
@@ -95,7 +96,8 @@
     .author-icon,
     .philosophy-icon,
     .practice-icon,
-    .principle-icon {
+    .principle-icon,
+    .works-icon {
       width:12px;
       height:12px;
       display:inline-flex;
@@ -111,8 +113,9 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; } /* Now changed to principle colour */
+    .principle-icon  { color:#e8b7b7; } /* principle colour */
     .author-icon     { color:#000000; }
+    .works-icon      { color:var(--works); }
 
     .physics-toggle {
       display:flex;
@@ -226,6 +229,7 @@
             <span class="principle-icon"><i class="fa-solid fa-columns"></i></span><small>Principle</small>
             <span class="practice-icon"><i class="fa-solid fa-sync-alt"></i></span><small>Practice</small>
             <span class="author-icon"><i class="fa-solid fa-user"></i></span><small>Author</small>
+            <span class="works-icon"><i class="fa-solid fa-book"></i></span><small>Works</small>
           </div>
 
           <div class="physics-toggle">
@@ -263,10 +267,11 @@
     // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE      : "#e8b7b7", // now "Principle"
+      PRINCIPLE  : "#e8b7b7", // Principle
       CONCEPT    : "#b8cde2",
       PRACTICE   : "#f3d9a4",
-      RELATION   : "#d5c7b3"
+      RELATION   : "#d5c7b3",
+      WORKS      : "#4B3FCB"
     };
 
     function getId(o){
@@ -305,6 +310,9 @@
       // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
+    function isWorksLabel(primary){
+      return primary && primary.toUpperCase() === "WORKS";
+    }
 
     function buildNode(n){
       var primary = (n.labels && n.labels[0]) || "Node";
@@ -322,7 +330,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf007", // user
+          code: "", // user
           size: 30,
           color: "#000"
         };
@@ -331,7 +339,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf5dc", // brain
+          code: "", // brain
           size: 35,
           color: colors[primary] || "#b4c8a8"
         };
@@ -340,7 +348,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf2f1",
+          code: "",
           size: 35,
           color: "#e8c670"
         };
@@ -349,9 +357,18 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf19c", // columns
+          code: "", // columns
           size: 30,
           color: "#e8b7b7"
+        };
+      } else if (isWorksLabel(primary)) {
+        // Works -> book icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // book
+          size: 30,
+          color: colors[primary] || "#4B3FCB"
         };
       } else {
         // fallback coloured dot
