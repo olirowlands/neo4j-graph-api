@@ -15,7 +15,7 @@
       --border:#2b3242;
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
-      --highlight:#d4a44b;
+      --highlight:#d4a4b;
       --works:#d5c7b3;
     }
     html, body {
@@ -174,7 +174,7 @@
       overflow:hidden;
     }
 
-    /* FOOTER / DETAILS */
+    /* FOOTER / DETAILS (RESIZABLE) */
     #details {
       flex:0 0 auto;
       background:var(--footer-bg);
@@ -183,22 +183,38 @@
       box-shadow:0 -4px 12px rgba(0,0,0,.25);
       font-size:16px;
       line-height:1.5;
-
-      /* lock the height so it never eats the viz */
-      height:200px;      /* <-- fixed footer height */
-    }
-
-    .details-inner {
-      max-width:960px;
-      margin:0 auto;
-      width:100%;
-      padding:10px;
       display:flex;
       flex-direction:column;
 
-      /* make inner box exactly fill footer so flex children can size */
-      height:100%;
+      /* resizable sizing */
+      height:200px;         /* default height */
+      min-height:100px;     /* clamp when dragging smaller */
+      max-height:60vh;      /* clamp when dragging larger */
+    }
+
+    /* drag handle bar at top of footer */
+    #details-resize-handle {
+      flex:0 0 auto;
+      height:6px;
+      cursor:row-resize;
+      background:linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.25),
+        rgba(255,255,255,0)
+      );
+      border-top:1px solid rgba(255,255,255,0.2);
+      border-bottom:1px solid rgba(0,0,0,0.6);
+    }
+
+    .details-inner {
+      flex:1 1 auto;
       min-height:0;
+      max-width:960px;
+      margin:0 auto;
+      width:100%;
+      padding:16px 24px 24px;
+      display:flex;
+      flex-direction:column;
     }
 
     .details-header {
@@ -210,9 +226,8 @@
       min-height:0;
       overflow-y:auto;
       scrollbar-width:thin;
-      padding-right: 12px;
-      padding-bottom: 12px;
-
+      padding-right:12px;
+      padding-bottom:12px;
     }
 
     .details-body::-webkit-scrollbar {
@@ -238,18 +253,23 @@
       text-transform:capitalize;
       line-height:1.2;
     }
+
+    /* fixed-height scrolling desc box */
     #details .desc {
       font-size:13px;
       color:var(--footer-text);
       line-height:1.5;
       white-space:pre-wrap;
       word-wrap:break-word;
-      height:70px;
+
+      height:120px;
       overflow-y:auto;
       padding-right:10px;
+      padding-bottom:8px;
       box-sizing:border-box;
     }
   </style>
+
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
 <body>
@@ -288,6 +308,7 @@
     <div id="viz"></div>
 
     <section id="details">
+      <div id="details-resize-handle"></div>
       <div class="details-inner">
         <div class="details-header">
           <h2 id="details-title">Select a node</h2>
@@ -313,7 +334,7 @@
     var descEl    = document.getElementById("details-desc");
     var toggle    = document.getElementById("physicsToggle");
 
-    // palette map for groups
+    // palette map (may be useful later if you recolor nodes dynamically)
     var colors = {
       PHILOSOPHY : "#b4c8a8",
       PRINCIPLE  : "#e8b7b7",
@@ -428,8 +449,8 @@
         base.color = {
           background: "#d5c7b3",
           border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover:     { background: "#d4a44b", border: "#3a3a3a" }
+          highlight: { background: "#d4a4b", border: "#3a3a3a" },
+          hover:     { background: "#d4a4b", border: "#3a3a3a" }
         };
         base.shape = "dot";
         base.size = 23;
@@ -440,7 +461,7 @@
       return base;
     }
 
-    // fetch graph data
+    // fetch and render graph
     fetch(endpoint + "?limit=1000")
       .then(r => r.json())
       .then(d => {
@@ -486,8 +507,8 @@
               length: 260,
               color: {
                 color: "#d5c7b3",
-                highlight: "#d4a44b",
-                hover: "#d4a44b"
+                highlight: "#d4a4b",
+                hover: "#d4a4b"
               },
               font: {
                 multi: "html",
@@ -516,8 +537,8 @@
               width: 1.5,
               color: {
                 color:"#d5c7b3",
-                highlight:"#d4a44b",
-                hover:"#d4a44b"
+                highlight:"#d4a4b",
+                hover:"#d4a4b"
               },
               smooth: false,
               font: { multi:"html", face:"Inter", color:"#000" }
@@ -538,14 +559,13 @@
           }
         );
 
-        // click -> populate bottom panel
+        // click -> populate footer panel
         net.on("click", p => {
           if (p.nodes.length > 0) {
             var n = nodesDS.get(p.nodes[0]);
             titleEl.textContent = n.label;
             typeEl.textContent  = n._type;
-            // we allow <br> etc, so use innerHTML
-            descEl.innerHTML    = n._desc;
+            descEl.innerHTML    = n._desc; // allow <br> etc
           }
         });
 
@@ -554,6 +574,49 @@
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
+
+    /* FOOTER RESIZE LOGIC */
+    (function enableFooterResize(){
+      const footer = document.getElementById("details");
+      const handle = document.getElementById("details-resize-handle");
+
+      let isDragging = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      handle.addEventListener("mousedown", e => {
+        isDragging = true;
+        startY = e.clientY;
+        startHeight = footer.getBoundingClientRect().height;
+
+        // prevent highlight / text selection
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "row-resize";
+      });
+
+      window.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+
+        // positive when dragging up
+        const deltaY = startY - e.clientY;
+        let newHeight = startHeight + deltaY;
+
+        const minH = 100; // sync with CSS min-height
+        const maxH = window.innerHeight * 0.6; // ~60vh cap
+        if (newHeight < minH) newHeight = minH;
+        if (newHeight > maxH) newHeight = maxH;
+
+        footer.style.height = newHeight + "px";
+      });
+
+      window.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+      });
+    })();
+
   })();
   </script>
 </body>
