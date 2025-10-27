@@ -32,8 +32,6 @@
       display:flex;
       flex-direction:column;
     }
-
-    /* HEADER */
     header {
       flex:0 0 auto;
       padding:10px 16px 12px;
@@ -115,7 +113,7 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; }
+    .principle-icon  { color:#e8b7b7; } /* principle colour */
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
     .citation-icon   { color:#88c3c0; }
@@ -164,9 +162,8 @@
     input:checked + .slider {background-color:var(--highlight);border-color:#3a3a3a;}
     input:checked + .slider:before {transform:translateX(16px);}
 
-    /* GRAPH AREA */
     #viz {
-      flex:1 1 auto;
+      flex:1;
       min-height:0;
       position:relative;
       background:transparent;
@@ -174,80 +171,34 @@
       overflow:hidden;
     }
 
-    /* FOOTER / DETAILS (resizable) */
     #details {
       flex:0 0 auto;
       background:var(--footer-bg);
       color:var(--footer-text);
       border-top:1px solid #4a4a4a;
       box-shadow:0 -4px 12px rgba(0,0,0,.25);
+      padding:20px 0 24px;
       font-size:16px;
       line-height:1.5;
-      display:flex;
-      flex-direction:column;
-
-      height:200px;
-      min-height:100px;
-      max-height:60vh;
     }
-
-    /* Grab handle visually improved */
-    #details-resize-handle {
-      position:relative;
-      flex:0 0 auto;
-      height:10px;
-      cursor:row-resize;
-      background:rgba(255,255,255,0.05);
-      border-top:1px solid rgba(255,255,255,0.2);
-      border-bottom:1px solid rgba(0,0,0,0.7);
-      box-shadow:0 -2px 4px rgba(0,0,0,0.4);
-
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    /* little pill "grip" in the middle */
-    #details-resize-handle::after {
-      content:"";
-      width:40px;
-      height:4px;
-      border-radius:2px;
-      background:rgba(255,255,255,0.35);
-      box-shadow:0 1px 2px rgba(0,0,0,0.8);
-    }
-
-    /* hover state: slightly brighter to advertise interactivity */
-    #details-resize-handle:hover {
-      background:rgba(255,255,255,0.08);
-    }
-    #details-resize-handle:hover::after {
-      background:rgba(255,255,255,0.6);
-    }
-
     .details-inner {
-      flex:1 1 auto;
-      min-height:0;
       max-width:960px;
       margin:0 auto;
       width:100%;
-      padding:16px 24px 24px;
-      display:flex;
-      flex-direction:column;
+      padding:0 24px;
+      min-height:140px;
+      max-height:30vh;
+      overflow-y:auto;
+      scrollbar-width:thin;
     }
 
-    .details-header {
-      flex:0 0 auto;
+    .details-inner::-webkit-scrollbar {
+      width:6px;
     }
-
-    .details-body {
-      flex:1 1 auto;
-      min-height:0;
-      padding-right:12px;
-      padding-bottom:12px;
-      overflow:visible;
+    .details-inner::-webkit-scrollbar-thumb {
+      background-color:rgba(255,255,255,0.3);
+      border-radius:3px;
     }
-
     #details h2 {
       margin:0 0 6px;
       font-size:16px;
@@ -263,21 +214,13 @@
       text-transform:capitalize;
       line-height:1.2;
     }
-
     #details .desc {
       font-size:13px;
       color:var(--footer-text);
-      line-height:1.5;
       white-space:pre-wrap;
-      word-wrap:break-word;
-      overflow:visible;
-      padding-right:10px;
-      padding-bottom:8px;
-      box-sizing:border-box;
-      height:auto;
+      line-height:1.5;
     }
   </style>
-
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
 <body>
@@ -289,7 +232,7 @@
 
       <div class="header-bottom">
         <div class="hypo-desc">
-          Hypomnemata (Greek:  ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
+          Hypomnemata (Greek: ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
         </div>
 
         <div class="legend-block">
@@ -316,132 +259,273 @@
     <div id="viz"></div>
 
     <section id="details">
-      <div id="details-resize-handle"></div>
       <div class="details-inner">
-        <div class="details-header">
-          <h2 id="details-title">Select a node</h2>
-          <div class="meta" id="details-type">—</div>
-        </div>
-
-        <div class="details-body">
-          <div class="desc" id="details-desc">
-            Click any node in the graph to see its description here.
-          </div>
-        </div>
+        <h2 id="details-title">Select a node</h2>
+        <div class="meta" id="details-type">—</div>
+        <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
       </div>
     </section>
   </div>
 
   <script>
   (function(){
-    const endpoint = "/api/graph";
-    const container = document.getElementById("viz");
-    const titleEl   = document.getElementById("details-title");
-    const typeEl    = document.getElementById("details-type");
-    const descEl    = document.getElementById("details-desc");
-    const toggle    = document.getElementById("physicsToggle");
+    var endpoint = "/api/graph";
 
-    function getId(o){return o && (o.id || o.identity || o.elementId);}
-    function getLabel(o){return (o.properties?.name || o.properties?.title || "Node");}
-    function getDesc(o){return (o.properties?.description || "No description available.");}
-    function getType(o){return (o.labels?.[0]?.toLowerCase() || "node");}
+    var container = document.getElementById("viz");
+    var titleEl   = document.getElementById("details-title");
+    var typeEl    = document.getElementById("details-type");
+    var descEl    = document.getElementById("details-desc");
+    var toggle    = document.getElementById("physicsToggle");
 
-    fetch(endpoint+"?limit=1000")
-      .then(r=>r.json())
-      .then(d=>{
-        const rows=(d.data?.values)||[];
-        const nodeMap=new Map(),edgeMap=new Map(),rawNodes=[],rawEdges=[];
-        rows.forEach(r=>{
-          if(r[0])rawNodes.push(r[0]);
-          if(r[2])rawNodes.push(r[2]);
-          if(r[1])rawEdges.push(r[1]);
+    // palette map for groups
+    var colors = {
+      PHILOSOPHY : "#b4c8a8",
+      PRINCIPLE  : "#e8b7b7", // Principle
+      CONCEPT    : "#b8cde2",
+      PRACTICE   : "#f3d9a4",
+      RELATION   : "#d5c7b3",
+      WORKS      : "#d5c7b3"
+    };
+
+    function getId(o){
+      return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;
+    }
+
+    function getLabel(o){
+      if (o && o.properties){
+        if (o.properties.title) return o.properties.title;
+        if (o.properties.name)  return o.properties.name;
+      }
+      return (o.labels && o.labels[0]) || "Node";
+    }
+
+    function getDesc(o){
+      var p = o.properties || {};
+      return (p.description && p.description.trim())
+        ? p.description
+        : "No description available.";
+    }
+
+    function getType(o){
+      return (o.labels && o.labels[0] ? o.labels[0].toLowerCase() : "node");
+    }
+
+    function isAuthorLabel(primary){
+      return primary && primary.toUpperCase() === "AUTHOR";
+    }
+    function isPhilosophyLabel(primary){
+      return primary && primary.toUpperCase() === "PHILOSOPHY";
+    }
+    function isPracticeLabel(primary){
+      return primary && primary.toUpperCase() === "PRACTICE";
+    }
+    function isPrincipleLabel(primary){
+      // "DOGMA" nodes are now treated visually as "Principle"
+      return primary && primary.toUpperCase() === "PRINCIPLE";
+    }
+        function isCitationLabel(primary){
+      return primary && primary.toUpperCase() === 'CITATION';
+    }
+
+function isWorksLabel(primary){
+      return primary && primary.toUpperCase() === "WORKS";
+    }
+
+    function buildNode(n){
+      var primary = (n.labels && n.labels[0]) || "Node";
+
+      var base = {
+        id    : getId(n),
+        label : getLabel(n),
+        group : primary,
+        _desc : getDesc(n),
+        _type : getType(n)
+      };
+
+      if (isAuthorLabel(primary)) {
+        // Author -> person icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // user
+          size: 30,
+          color: "#000"
+        };
+      } else if (isPhilosophyLabel(primary)) {
+        // Philosophy -> brain icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // brain
+          size: 35,
+          color: colors[primary] || "#b4c8a8"
+        };
+      } else if (isPracticeLabel(primary)) {
+        // Practice -> running/loop icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "",
+          size: 35,
+          color: "#e8c670"
+        };
+      } else if (isPrincipleLabel(primary)) {
+        // Principle (PRINCIPLE) -> columns icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // columns
+          size: 30,
+          color: "#e8b7b7"
+        };
+      } else if (isCitationLabel(primary)) {
+        // Citation -> speech bubble icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "\uf4ad", // comment-dots
+          size: 30,
+          color: "#88c3c0"
+        };
+      } else if (isWorksLabel(primary)) {
+        // Works -> book icon
+        base.shape = "icon";
+        base.icon = {
+          face: "FontAwesome",
+          code: "", // book
+          size: 30,
+          color: colors[primary] || "#d5c7b3"
+        };
+      } else {
+        // fallback coloured dot
+        base.color = {
+          background: colors[primary] || "#d5c7b3",
+          border: "#333",
+          highlight: { background: "#d4a44b", border: "#3a3a3a" },
+          hover:     { background: "#d4a44b", border: "#3a3a3a" }
+        };
+        base.shape = "dot";
+        base.size = 23;
+        base.borderWidth = 2;
+        base.font = { color:"#000", size:16, face:"Inter, system-ui" };
+      }
+
+      return base;
+    }
+
+    // fetch graph data
+    fetch(endpoint + "?limit=1000")
+      .then(r => r.json())
+      .then(d => {
+        var rows = (d && d.data && d.data.values) || [];
+
+        var nodeMap = new Map();
+        var edgeMap = new Map();
+        var rawNodes = [];
+        var rawEdges = [];
+
+        rows.forEach(row => {
+          if (row[0]) rawNodes.push(row[0]);
+          if (row[2]) rawNodes.push(row[2]);
+          if (row[1]) rawEdges.push(row[1]);
         });
-        rawNodes.forEach(n=>{
-          const i=getId(n);
-          if(i&&!nodeMap.has(i)){
-            nodeMap.set(i,{
-              id:i,
-              label:getLabel(n),
-              _desc:getDesc(n),
-              _type:getType(n)
+
+        rawNodes.forEach(n => {
+          var i = getId(n);
+          if (i && !nodeMap.has(i)) {
+            nodeMap.set(i, buildNode(n));
+          }
+        });
+
+        rawEdges.forEach(e => {
+          var i = getId(e),
+              f = e.startNodeElementId || e.start || e.from,
+              t = e.endNodeElementId   || e.end   || e.to;
+
+          if (i && f && t && !edgeMap.has(i)) {
+            var lab = e.type
+              ? "<i>" + e.type
+                  .replace(/_/g," ")
+                  .toLowerCase()
+                  .replace(/^\w/, c => c.toUpperCase()) + "</i>"
+              : "";
+
+            edgeMap.set(i, {
+              id: i,
+              from: f,
+              to: t,
+              label: lab,
+              arrows: "to",
+              length: 260,
+              color: {
+                color: "#d5c7b3",
+                highlight: "#d4a44b",
+                hover: "#d4a44b"
+              },
+              font: {
+                multi: "html",
+                face: "Inter",
+                color: "#000"
+              },
+              smooth: false
             });
           }
         });
-        rawEdges.forEach(e=>{
-          const i=getId(e),
-                f=e.start||e.from,
-                t=e.end||e.to;
-          if(i&&f&&t&&!edgeMap.has(i)){
-            edgeMap.set(i,{
-              id:i,
-              from:f,
-              to:t,
-              arrows:"to"
-            });
-          }
-        });
 
-        const net = new vis.Network(
+        var nodesDS = new vis.DataSet([...nodeMap.values()]);
+        var edgesDS = new vis.DataSet([...edgeMap.values()]);
+
+        var net = new vis.Network(
           container,
-          { nodes:[...nodeMap.values()], edges:[...edgeMap.values()] },
-          {}
+          { nodes: nodesDS, edges: edgesDS },
+          {
+            nodes: {
+              shape: "dot",
+              size: 23,
+              borderWidth: 2,
+              font: { color:"#000", size:16, face:"Inter, system-ui" }
+            },
+            edges: {
+              width: 1.5,
+              color: {
+                color:"#d5c7b3",
+                highlight:"#d4a44b",
+                hover:"#d4a44b"
+              },
+              smooth: false,
+              font: { multi:"html", face:"Inter", color:"#000" }
+            },
+            interaction: { hover:true, tooltipDelay:150 },
+            physics: {
+              enabled: true,
+              solver: "forceAtlas2Based",
+              forceAtlas2Based: {
+                gravitationalConstant: -30,
+                centralGravity: 0.0005,
+                springLength: 280,
+                springConstant: 0.03,
+                avoidOverlap: 1
+              },
+              stabilization: { iterations: 400 }
+            }
+          }
         );
 
+        // click -> populate bottom panel
         net.on("click", p => {
-          if (p.nodes.length) {
-            const n = nodeMap.get(p.nodes[0]);
+          if (p.nodes.length > 0) {
+            var n = nodesDS.get(p.nodes[0]);
             titleEl.textContent = n.label;
             typeEl.textContent  = n._type;
-            descEl.innerHTML    = n._desc; // supports <br>
+            descEl.textContent  = n._desc;
           }
         });
 
+        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
-
-    // footer resize logic with nicer handle
-    (function enableFooterResize(){
-      const footer = document.getElementById("details");
-      const handle = document.getElementById("details-resize-handle");
-
-      let dragging = false;
-      let startY = 0;
-      let startH = 0;
-
-      handle.addEventListener("mousedown", e => {
-        dragging = true;
-        startY = e.clientY;
-        startH = footer.getBoundingClientRect().height;
-
-        document.body.style.userSelect = "none";
-        document.body.style.cursor = "row-resize";
-      });
-
-      window.addEventListener("mousemove", e => {
-        if (!dragging) return;
-
-        const delta = startY - e.clientY;
-        let newH = startH + delta;
-
-        // clamp to min/max just like CSS
-        const minH = 100;
-        const maxH = window.innerHeight * 0.6;
-        if (newH < minH) newH = minH;
-        if (newH > maxH) newH = maxH;
-
-        footer.style.height = newH + "px";
-      });
-
-      window.addEventListener("mouseup", () => {
-        if (dragging) {
-          dragging = false;
-          document.body.style.userSelect = "";
-          document.body.style.cursor = "";
-        }
-      });
-    })();
   })();
   </script>
 </body>
