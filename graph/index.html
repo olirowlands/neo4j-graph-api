@@ -175,7 +175,6 @@
     }
 
     /* FOOTER / DETAILS */
-    /* NEW: footer is now flex column with a hard max-height */
     #details {
       flex:0 0 auto;
       background:var(--footer-bg);
@@ -185,15 +184,10 @@
       font-size:16px;
       line-height:1.5;
 
-      /* important bits */
-      display:flex;
-      flex-direction:column;
-      max-height:30vh;      /* cap total footer height */
-      min-height:140px;     /* keep initial nice size */
+      /* lock the height so it never eats the viz */
+      height:200px;      /* <-- fixed footer height */
     }
 
-    /* details-inner no longer sets max-height itself.
-       it just provides padding + width constraints */
     .details-inner {
       max-width:960px;
       margin:0 auto;
@@ -201,16 +195,16 @@
       padding:20px 24px 24px;
       display:flex;
       flex-direction:column;
-      min-height:0; /* let child flexbox sizing work */
-      flex:1 1 auto;
+
+      /* make inner box exactly fill footer so flex children can size */
+      height:100%;
+      min-height:0;
     }
 
-    /* header block (title + meta) sits above the scroll region */
     .details-header {
       flex:0 0 auto;
     }
 
-    /* scroll region fills the rest and actually scrolls */
     .details-body {
       flex:1 1 auto;
       min-height:0;
@@ -389,7 +383,7 @@
           face: "FontAwesome",
           code: "",
           size: 35,
-          color: colors[primary] || "#b4c8a8"
+          color: "#b4c8a8"
         };
       } else if (isPracticeLabel(primary)) {
         base.shape = "icon";
@@ -421,11 +415,11 @@
           face: "FontAwesome",
           code: "",
           size: 30,
-          color: colors[primary] || "#d5c7b3"
+          color: "#d5c7b3"
         };
       } else {
         base.color = {
-          background: colors[primary] || "#d5c7b3",
+          background: "#d5c7b3",
           border: "#333",
           highlight: { background: "#d4a44b", border: "#3a3a3a" },
           hover:     { background: "#d4a44b", border: "#3a3a3a" }
