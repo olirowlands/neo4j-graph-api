@@ -18,7 +18,7 @@
       --highlight:#d4a44b;
       --works:#d5c7b3;
 
-      /* initial footer height */
+      /* starting footer height */
       --details-height: 160px;
     }
 
@@ -119,7 +119,7 @@
 
     .philosophy-icon { color:#b4c8a8; }
     .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; } /* principle colour */
+    .principle-icon  { color:#e8b7b7; }
     .author-icon     { color:#000000; }
     .works-icon      { color:var(--works); }
     .citation-icon   { color:#88c3c0; }
@@ -207,7 +207,7 @@
       border-top:1px solid #4a4a4a;
       box-shadow:0 -4px 12px rgba(0,0,0,.25);
 
-      /* use variable height */
+      /* this height is live-updated via JS */
       height:var(--details-height);
       min-height:var(--details-height);
       max-height:60vh;
@@ -226,16 +226,14 @@
       flex:1 1 auto;
       min-height:0;
       overflow-y:auto;
+
+      /* invisible scrollbar */
       scrollbar-width:none;
-      -ms-overflow-style: none;
+      -ms-overflow-style:none;
     }
 
     .details-inner::-webkit-scrollbar {
-      display: none; 
-    }
-    .details-inner::-webkit-scrollbar-thumb {
-      background-color:rgba(255,255,255,0.3);
-      border-radius:3px;
+      display:none;
     }
 
     #details h2 {
@@ -369,7 +367,6 @@
       return primary && primary.toUpperCase() === "PRACTICE";
     }
     function isPrincipleLabel(primary){
-      // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
     function isCitationLabel(primary){
@@ -391,7 +388,6 @@
       };
 
       if (isAuthorLabel(primary)) {
-        // Author -> person icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -400,7 +396,6 @@
           color: "#000"
         };
       } else if (isPhilosophyLabel(primary)) {
-        // Philosophy -> brain icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -409,7 +404,6 @@
           color: colors[primary] || "#b4c8a8"
         };
       } else if (isPracticeLabel(primary)) {
-        // Practice -> running/loop icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -418,7 +412,6 @@
           color: "#e8c670"
         };
       } else if (isPrincipleLabel(primary)) {
-        // Principle (PRINCIPLE) -> columns icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -427,7 +420,6 @@
           color: "#e8b7b7"
         };
       } else if (isCitationLabel(primary)) {
-        // Citation -> speech bubble icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -436,7 +428,6 @@
           color: "#88c3c0"
         };
       } else if (isWorksLabel(primary)) {
-        // Works -> book icon
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
@@ -445,12 +436,11 @@
           color: colors[primary] || "#d5c7b3"
         };
       } else {
-        // fallback coloured dot
         base.color = {
           background: colors[primary] || "#d5c7b3",
           border: "#333",
           highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover:     { background: "#d4a44b", border: "#3a3a3a" }
+          hover:     { background: "#d4a4 4b", border: "#3a3a3a" }
         };
         base.shape = "dot";
         base.size = 23;
@@ -565,7 +555,7 @@
             var n = nodesDS.get(p.nodes[0]);
             titleEl.textContent = n.label;
             typeEl.textContent  = n._type;
-            descEl.innerHTML  = n._desc;
+            descEl.innerHTML    = n._desc;
           }
         });
 
@@ -589,10 +579,23 @@
         return Number(String(v).replace("px","")) || 0;
       }
 
+      // Capture the starting/minimum height ONCE at load.
+      var baseMinHeight = (function(){
+        var raw = getComputedStyle(root).getPropertyValue("--details-height").trim();
+        var n = pxToNumber(raw);
+        // fallback to actual element height if var is missing
+        if (!n) {
+          var detEl = document.getElementById("details");
+          n = detEl ? detEl.offsetHeight : 160;
+        }
+        return n;
+      })();
+
       resizer.addEventListener("mousedown", function(e){
         isDragging = true;
         startY = e.clientY;
-        // current height from CSS var
+
+        // read current runtime height (which may have changed from dragging)
         var current = getComputedStyle(root).getPropertyValue("--details-height").trim();
         startH = pxToNumber(current) || document.getElementById("details").offsetHeight;
 
@@ -606,11 +609,10 @@
         var dy = e.clientY - startY;
         var newH = startH - dy; // drag up -> bigger footer
 
-        // dynamically read initial height as minimum
-        var initialH = pxToNumber(getComputedStyle(root).getPropertyValue("--details-height"));
         var maxH = window.innerHeight * 0.6;
 
-        if (newH < initialH) newH = initialH; // 👈 use initial height as min
+        // Clamp using the ORIGINAL starting height, not the live height
+        if (newH < baseMinHeight) newH = baseMinHeight;
         if (newH > maxH) newH = maxH;
 
         root.style.setProperty("--details-height", newH + "px");
