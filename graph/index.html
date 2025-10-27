@@ -209,7 +209,7 @@
 
       /* use variable height */
       height:var(--details-height);
-      min-height:120px;
+      min-height:var(--details-height);
       max-height:60vh;
 
       display:flex;
@@ -606,9 +606,11 @@
         var dy = e.clientY - startY;
         var newH = startH - dy; // drag up -> bigger footer
 
-        // clamp between min 120px and max 60vh
+        // dynamically read initial height as minimum
+        var initialH = pxToNumber(getComputedStyle(root).getPropertyValue("--details-height"));
         var maxH = window.innerHeight * 0.6;
-        if (newH < 120) newH = 120;
+
+        if (newH < initialH) newH = initialH; // 👈 use initial height as min
         if (newH > maxH) newH = maxH;
 
         root.style.setProperty("--details-height", newH + "px");
