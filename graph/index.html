@@ -172,6 +172,9 @@
     }
 
     #details {
+  max-height: 30vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
       flex:0 0 auto;
       background:var(--footer-bg);
       color:var(--footer-text);
@@ -209,6 +212,15 @@
       white-space:pre-wrap;
       line-height:1.5;
     }
+  
+#details::-webkit-scrollbar {
+  width: 6px;
+}
+#details::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
   </style>
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
