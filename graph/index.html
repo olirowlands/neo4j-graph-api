@@ -176,6 +176,8 @@
       background:transparent;
       z-index:0;
       overflow:hidden;
+      /* NEW: allow us to lock height cleanly without transitions fighting */
+      transition:none;
     }
 
     /* drag handle just above footer */
@@ -570,10 +572,12 @@
       var resizer = document.getElementById("footer-resizer");
       var root    = document.documentElement;
       var wrap    = document.querySelector(".wrap");
+      var viz     = document.getElementById("viz"); // NEW
 
       var isDragging = false;
       var startY     = 0;
       var startH     = 0;
+      var baseVizH   = 0; // NEW
 
       function pxToNumber(v){
         return Number(String(v).replace("px","")) || 0;
@@ -583,7 +587,6 @@
       var baseMinHeight = (function(){
         var raw = getComputedStyle(root).getPropertyValue("--details-height").trim();
         var n = pxToNumber(raw);
-        // fallback to actual element height if var is missing
         if (!n) {
           var detEl = document.getElementById("details");
           n = detEl ? detEl.offsetHeight : 160;
@@ -598,6 +601,11 @@
         // read current runtime height (which may have changed from dragging)
         var current = getComputedStyle(root).getPropertyValue("--details-height").trim();
         startH = pxToNumber(current) || document.getElementById("details").offsetHeight;
+
+        // NEW: freeze the graph space so panning/zoom view doesn't jump
+        baseVizH = viz.offsetHeight;
+        viz.style.height = baseVizH + "px";
+        viz.style.flex = "0 0 auto";
 
         wrap.classList.add("resizing");
         e.preventDefault();
@@ -622,6 +630,10 @@
         if(isDragging){
           isDragging = false;
           wrap.classList.remove("resizing");
+
+          // NEW: allow graph to flex again after drag stops
+          viz.style.height = "";
+          viz.style.flex = "1 1 auto";
         }
       });
     })();
