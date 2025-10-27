@@ -15,7 +15,7 @@
       --border:#2b3242;
       --footer-bg:#3a3a3a;
       --footer-text:#f9f8f5;
-      --highlight:#d4a4b;
+      --highlight:#d4a44b;
       --works:#d5c7b3;
     }
     html, body {
@@ -174,7 +174,7 @@
       overflow:hidden;
     }
 
-    /* FOOTER / DETAILS (RESIZABLE) */
+    /* FOOTER / DETAILS (resizable) */
     #details {
       flex:0 0 auto;
       background:var(--footer-bg);
@@ -186,24 +186,43 @@
       display:flex;
       flex-direction:column;
 
-      /* resizable sizing */
-      height:200px;         /* default height */
-      min-height:100px;     /* clamp when dragging smaller */
-      max-height:60vh;      /* clamp when dragging larger */
+      height:200px;
+      min-height:100px;
+      max-height:60vh;
     }
 
-    /* drag handle bar at top of footer */
+    /* Grab handle visually improved */
     #details-resize-handle {
+      position:relative;
       flex:0 0 auto;
-      height:6px;
+      height:10px;
       cursor:row-resize;
-      background:linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.25),
-        rgba(255,255,255,0)
-      );
+      background:rgba(255,255,255,0.05);
       border-top:1px solid rgba(255,255,255,0.2);
-      border-bottom:1px solid rgba(0,0,0,0.6);
+      border-bottom:1px solid rgba(0,0,0,0.7);
+      box-shadow:0 -2px 4px rgba(0,0,0,0.4);
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* little pill "grip" in the middle */
+    #details-resize-handle::after {
+      content:"";
+      width:40px;
+      height:4px;
+      border-radius:2px;
+      background:rgba(255,255,255,0.35);
+      box-shadow:0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* hover state: slightly brighter to advertise interactivity */
+    #details-resize-handle:hover {
+      background:rgba(255,255,255,0.08);
+    }
+    #details-resize-handle:hover::after {
+      background:rgba(255,255,255,0.6);
     }
 
     .details-inner {
@@ -224,18 +243,9 @@
     .details-body {
       flex:1 1 auto;
       min-height:0;
-      overflow-y:auto;
-      scrollbar-width:thin;
       padding-right:12px;
       padding-bottom:12px;
-    }
-
-    .details-body::-webkit-scrollbar {
-      width:6px;
-    }
-    .details-body::-webkit-scrollbar-thumb {
-      background-color:rgba(255,255,255,0.3);
-      border-radius:3px;
+      overflow:visible;
     }
 
     #details h2 {
@@ -254,19 +264,17 @@
       line-height:1.2;
     }
 
-    /* fixed-height scrolling desc box */
     #details .desc {
       font-size:13px;
       color:var(--footer-text);
       line-height:1.5;
       white-space:pre-wrap;
       word-wrap:break-word;
-
-      height:120px;
-      overflow-y:auto;
+      overflow:visible;
       padding-right:10px;
       padding-bottom:8px;
       box-sizing:border-box;
+      height:auto;
     }
   </style>
 
@@ -281,7 +289,7 @@
 
       <div class="header-bottom">
         <div class="hypo-desc">
-          Hypomnemata (Greek: ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
+          Hypomnemata (Greek:  ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
         </div>
 
         <div class="legend-block">
@@ -326,297 +334,114 @@
 
   <script>
   (function(){
-    var endpoint = "/api/graph";
+    const endpoint = "/api/graph";
+    const container = document.getElementById("viz");
+    const titleEl   = document.getElementById("details-title");
+    const typeEl    = document.getElementById("details-type");
+    const descEl    = document.getElementById("details-desc");
+    const toggle    = document.getElementById("physicsToggle");
 
-    var container = document.getElementById("viz");
-    var titleEl   = document.getElementById("details-title");
-    var typeEl    = document.getElementById("details-type");
-    var descEl    = document.getElementById("details-desc");
-    var toggle    = document.getElementById("physicsToggle");
+    function getId(o){return o && (o.id || o.identity || o.elementId);}
+    function getLabel(o){return (o.properties?.name || o.properties?.title || "Node");}
+    function getDesc(o){return (o.properties?.description || "No description available.");}
+    function getType(o){return (o.labels?.[0]?.toLowerCase() || "node");}
 
-    // palette map (may be useful later if you recolor nodes dynamically)
-    var colors = {
-      PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7",
-      CONCEPT    : "#b8cde2",
-      PRACTICE   : "#f3d9a4",
-      RELATION   : "#d5c7b3",
-      WORKS      : "#d5c7b3"
-    };
-
-    function getId(o){
-      return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;
-    }
-
-    function getLabel(o){
-      if (o && o.properties){
-        if (o.properties.title) return o.properties.title;
-        if (o.properties.name)  return o.properties.name;
-      }
-      return (o.labels && o.labels[0]) || "Node";
-    }
-
-    function getDesc(o){
-      var p = o.properties || {};
-      return (p.description && p.description.trim())
-        ? p.description
-        : "No description available.";
-    }
-
-    function getType(o){
-      return (o.labels && o.labels[0] ? o.labels[0].toLowerCase() : "node");
-    }
-
-    function isAuthorLabel(primary){
-      return primary && primary.toUpperCase() === "AUTHOR";
-    }
-    function isPhilosophyLabel(primary){
-      return primary && primary.toUpperCase() === "PHILOSOPHY";
-    }
-    function isPracticeLabel(primary){
-      return primary && primary.toUpperCase() === "PRACTICE";
-    }
-    function isPrincipleLabel(primary){
-      return primary && primary.toUpperCase() === "PRINCIPLE";
-    }
-    function isCitationLabel(primary){
-      return primary && primary.toUpperCase() === "CITATION";
-    }
-    function isWorksLabel(primary){
-      return primary && primary.toUpperCase() === "WORKS";
-    }
-
-    function buildNode(n){
-      var primary = (n.labels && n.labels[0]) || "Node";
-
-      var base = {
-        id    : getId(n),
-        label : getLabel(n),
-        group : primary,
-        _desc : getDesc(n),
-        _type : getType(n)
-      };
-
-      if (isAuthorLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#000"
-        };
-      } else if (isPhilosophyLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: "#b4c8a8"
-        };
-      } else if (isPracticeLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: "#e8c670"
-        };
-      } else if (isPrincipleLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#e8b7b7"
-        };
-      } else if (isCitationLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf4ad",
-          size: 30,
-          color: "#88c3c0"
-        };
-      } else if (isWorksLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#d5c7b3"
-        };
-      } else {
-        base.color = {
-          background: "#d5c7b3",
-          border: "#333",
-          highlight: { background: "#d4a4b", border: "#3a3a3a" },
-          hover:     { background: "#d4a4b", border: "#3a3a3a" }
-        };
-        base.shape = "dot";
-        base.size = 23;
-        base.borderWidth = 2;
-        base.font = { color:"#000", size:16, face:"Inter, system-ui" };
-      }
-
-      return base;
-    }
-
-    // fetch and render graph
-    fetch(endpoint + "?limit=1000")
-      .then(r => r.json())
-      .then(d => {
-        var rows = (d && d.data && d.data.values) || [];
-
-        var nodeMap = new Map();
-        var edgeMap = new Map();
-        var rawNodes = [];
-        var rawEdges = [];
-
-        rows.forEach(row => {
-          if (row[0]) rawNodes.push(row[0]);
-          if (row[2]) rawNodes.push(row[2]);
-          if (row[1]) rawEdges.push(row[1]);
+    fetch(endpoint+"?limit=1000")
+      .then(r=>r.json())
+      .then(d=>{
+        const rows=(d.data?.values)||[];
+        const nodeMap=new Map(),edgeMap=new Map(),rawNodes=[],rawEdges=[];
+        rows.forEach(r=>{
+          if(r[0])rawNodes.push(r[0]);
+          if(r[2])rawNodes.push(r[2]);
+          if(r[1])rawEdges.push(r[1]);
         });
-
-        rawNodes.forEach(n => {
-          var i = getId(n);
-          if (i && !nodeMap.has(i)) {
-            nodeMap.set(i, buildNode(n));
+        rawNodes.forEach(n=>{
+          const i=getId(n);
+          if(i&&!nodeMap.has(i)){
+            nodeMap.set(i,{
+              id:i,
+              label:getLabel(n),
+              _desc:getDesc(n),
+              _type:getType(n)
+            });
           }
         });
-
-        rawEdges.forEach(e => {
-          var i = getId(e),
-              f = e.startNodeElementId || e.start || e.from,
-              t = e.endNodeElementId   || e.end   || e.to;
-
-          if (i && f && t && !edgeMap.has(i)) {
-            var lab = e.type
-              ? "<i>" + e.type
-                  .replace(/_/g," ")
-                  .toLowerCase()
-                  .replace(/^\w/, c => c.toUpperCase()) + "</i>"
-              : "";
-
-            edgeMap.set(i, {
-              id: i,
-              from: f,
-              to: t,
-              label: lab,
-              arrows: "to",
-              length: 260,
-              color: {
-                color: "#d5c7b3",
-                highlight: "#d4a4b",
-                hover: "#d4a4b"
-              },
-              font: {
-                multi: "html",
-                face: "Inter",
-                color: "#000"
-              },
-              smooth: false
+        rawEdges.forEach(e=>{
+          const i=getId(e),
+                f=e.start||e.from,
+                t=e.end||e.to;
+          if(i&&f&&t&&!edgeMap.has(i)){
+            edgeMap.set(i,{
+              id:i,
+              from:f,
+              to:t,
+              arrows:"to"
             });
           }
         });
 
-        var nodesDS = new vis.DataSet([...nodeMap.values()]);
-        var edgesDS = new vis.DataSet([...edgeMap.values()]);
-
-        var net = new vis.Network(
+        const net = new vis.Network(
           container,
-          { nodes: nodesDS, edges: edgesDS },
-          {
-            nodes: {
-              shape: "dot",
-              size: 23,
-              borderWidth: 2,
-              font: { color:"#000", size:16, face:"Inter, system-ui" }
-            },
-            edges: {
-              width: 1.5,
-              color: {
-                color:"#d5c7b3",
-                highlight:"#d4a4b",
-                hover:"#d4a4b"
-              },
-              smooth: false,
-              font: { multi:"html", face:"Inter", color:"#000" }
-            },
-            interaction: { hover:true, tooltipDelay:150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -30,
-                centralGravity: 0.0005,
-                springLength: 280,
-                springConstant: 0.03,
-                avoidOverlap: 1
-              },
-              stabilization: { iterations: 400 }
-            }
-          }
+          { nodes:[...nodeMap.values()], edges:[...edgeMap.values()] },
+          {}
         );
 
-        // click -> populate footer panel
         net.on("click", p => {
-          if (p.nodes.length > 0) {
-            var n = nodesDS.get(p.nodes[0]);
+          if (p.nodes.length) {
+            const n = nodeMap.get(p.nodes[0]);
             titleEl.textContent = n.label;
             typeEl.textContent  = n._type;
-            descEl.innerHTML    = n._desc; // allow <br> etc
+            descEl.innerHTML    = n._desc; // supports <br>
           }
         });
 
-        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
 
-    /* FOOTER RESIZE LOGIC */
+    // footer resize logic with nicer handle
     (function enableFooterResize(){
       const footer = document.getElementById("details");
       const handle = document.getElementById("details-resize-handle");
 
-      let isDragging = false;
+      let dragging = false;
       let startY = 0;
-      let startHeight = 0;
+      let startH = 0;
 
       handle.addEventListener("mousedown", e => {
-        isDragging = true;
+        dragging = true;
         startY = e.clientY;
-        startHeight = footer.getBoundingClientRect().height;
+        startH = footer.getBoundingClientRect().height;
 
-        // prevent highlight / text selection
         document.body.style.userSelect = "none";
         document.body.style.cursor = "row-resize";
       });
 
       window.addEventListener("mousemove", e => {
-        if (!isDragging) return;
+        if (!dragging) return;
 
-        // positive when dragging up
-        const deltaY = startY - e.clientY;
-        let newHeight = startHeight + deltaY;
+        const delta = startY - e.clientY;
+        let newH = startH + delta;
 
-        const minH = 100; // sync with CSS min-height
-        const maxH = window.innerHeight * 0.6; // ~60vh cap
-        if (newHeight < minH) newHeight = minH;
-        if (newHeight > maxH) newHeight = maxH;
+        // clamp to min/max just like CSS
+        const minH = 100;
+        const maxH = window.innerHeight * 0.6;
+        if (newH < minH) newH = minH;
+        if (newH > maxH) newH = maxH;
 
-        footer.style.height = newHeight + "px";
+        footer.style.height = newH + "px";
       });
 
       window.addEventListener("mouseup", () => {
-        if (!isDragging) return;
-        isDragging = false;
-        document.body.style.userSelect = "";
-        document.body.style.cursor = "";
+        if (dragging) {
+          dragging = false;
+          document.body.style.userSelect = "";
+          document.body.style.cursor = "";
+        }
       });
     })();
-
   })();
   </script>
 </body>
