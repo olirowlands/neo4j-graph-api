@@ -17,286 +17,38 @@
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
       --works:#d5c7b3;
-
-      /* initial visible footer height */
       --details-height:160px;
     }
 
-    html, body {
-      height:100%;
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font:14px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      overflow:hidden;
-    }
-
-    /* CHANGED:
-       wrap is full viewport, but we'll manually size header+graph instead of flexing footer */
-    .wrap {
-      position:relative;
-      height:100vh;
-      width:100%;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-
-    header {
-      flex:0 0 auto;
-      padding:10px 16px 12px;
-      background:var(--card);
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      border-bottom:1px solid var(--border);
-      z-index:10;
-      color:#fff;
-    }
-    .header-top {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      width:100%;
-    }
-    header h1 {
-      font-size:16px;
-      margin:0;
-      color:white;
-      font-weight:600;
-    }
-    .header-bottom {
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      align-items:flex-start;
-      width:100%;
-      gap:12px;
-    }
-    .hypo-desc {
-      color:#fff;
-      font-size:14px;
-      font-weight:400;
-      line-height:1.4;
-      max-width:960px;
-      opacity:.9;
-      margin-top:4px;
-      flex:1 1 60%;
-      min-width:240px;
-    }
-    .legend-block {
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      color:white;
-      flex:0 0 auto;
-      min-width:max-content;
-    }
-    .legend {
-      display:flex;
-      flex-wrap:wrap;
-      row-gap:6px;
-      column-gap:10px;
-      align-items:center;
-      color:white;
-      font-size:16px;
-      font-weight:500;
-    }
-
-    .author-icon,
-    .philosophy-icon,
-    .practice-icon,
-    .principle-icon,
-    .works-icon {
-      width:12px;
-      height:12px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:50%;
-      font-size:12px;
-      line-height:1;
-      background:transparent;
-      border:none;
-      color:#000;
-    }
-
-    .philosophy-icon { color:#b4c8a8; }
-    .practice-icon   { color:#e8c670; }
-    .principle-icon  { color:#e8b7b7; }
-    .author-icon     { color:#000000; }
-    .works-icon      { color:var(--works); }
-    .citation-icon   { color:#88c3c0; }
-
-    .physics-toggle {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-size:14px;
-      line-height:1.2;
-      font-weight:500;
-      color:#fff;
-      margin-top:4px;
-      justify-content:flex-end;
-      width:100%;
-    }
-    .switch {
-      position:relative;
-      display:inline-block;
-      width:34px;
-      height:18px;
-      flex-shrink:0;
-    }
+    html, body {height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
+    .wrap {position:relative;height:100vh;width:100%;display:flex;flex-direction:column;overflow:hidden;}
+    header {flex:0 0 auto;padding:10px 16px 12px;background:var(--card);display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--border);z-index:10;color:#fff;}
+    .header-top {display:flex;align-items:center;justify-content:space-between;width:100%;}
+    header h1 {font-size:16px;margin:0;color:white;font-weight:600;}
+    .header-bottom {display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;width:100%;gap:12px;}
+    .hypo-desc {color:#fff;font-size:14px;font-weight:400;line-height:1.4;max-width:960px;opacity:.9;margin-top:4px;flex:1 1 60%;min-width:240px;}
+    .legend-block {display:flex;flex-direction:column;align-items:flex-end;color:white;flex:0 0 auto;min-width:max-content;}
+    .legend {display:flex;flex-wrap:wrap;row-gap:6px;column-gap:10px;align-items:center;color:white;font-size:16px;font-weight:500;}
+    .zoom-control {display:flex;align-items:center;gap:6px;font-size:13px;margin-top:6px;}
+    .philosophy-icon {color:#b4c8a8;}.practice-icon{color:#e8c670;}.principle-icon{color:#e8b7b7;}.author-icon{color:#000000;}.works-icon{color:var(--works);}.citation-icon{color:#88c3c0;}
+    .physics-toggle {display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:#fff;margin-top:4px;justify-content:flex-end;width:100%;}
+    .switch {position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;}
     .switch input {opacity:0;width:0;height:0;}
-    .slider {
-      position:absolute;
-      cursor:pointer;
-      top:0;left:0;right:0;bottom:0;
-      background-color:#555;
-      border-radius:10px;
-      transition:.2s;
-      border:1px solid #222;
-    }
-    .slider:before {
-      position:absolute;
-      content:"";
-      height:12px;
-      width:12px;
-      left:3px;
-      top:2px;
-      background-color:#fff;
-      border-radius:50%;
-      transition:.2s;
-      box-shadow:0 1px 2px rgba(0,0,0,.6);
-    }
+    .slider {position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#555;border-radius:10px;transition:.2s;border:1px solid #222;}
+    .slider:before {position:absolute;content:"";height:12px;width:12px;left:3px;top:2px;background-color:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.6);}
     input:checked + .slider {background-color:var(--highlight);border-color:#3a3a3a;}
     input:checked + .slider:before {transform:translateX(16px);}
-
-    /* NEW:
-       graph region fills everything under header.
-       We absolutely position the footer INSIDE this region. */
-    .graph-area {
-      position:relative;
-      flex:1 1 auto;
-      min-height:0;
-      overflow:hidden;
-      /* create a stacking context so footer can sit above */
-      z-index:0;
-    }
-
-    /* vis container fills the graph-area, completely independent of footer height */
-    #viz {
-      position:absolute;
-      left:0;
-      right:0;
-      top:0;
-      bottom:0;
-      overflow:hidden;
-      background:transparent;
-    }
-
-    /* NEW:
-       footer + resizer are absolutely positioned at the bottom of .graph-area
-       and sized using --details-height.
-    */
-    #footer-resizer {
-      position:absolute;
-      left:0;
-      right:0;
-      /* sits just above the footer panel */
-      height:6px;
-      cursor:row-resize;
-      z-index:30;
-
-      /* dynamic vertical position:
-         footer top edge = 100% - var(--details-height)
-         resizer sits 6px above that */
-      top:calc(100% - var(--details-height) - 6px);
-
-      background:rgba(0,0,0,0);
-    }
-    #footer-resizer::before {
-      content:"";
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:60px;
-      height:3px;
-      border-radius:2px;
-      background:#4a4a4a;
-      box-shadow:0 0 4px rgba(0,0,0,.4);
-    }
-
-    #details {
-      position:absolute;
-      left:0;
-      right:0;
-      bottom:0;
-      z-index:40;
-
-      background:var(--footer-bg);
-      color:var(--footer-text);
-      border-top:1px solid #4a4a4a;
-      box-shadow:0 -4px 12px rgba(0,0,0,.25);
-
-      /* dynamic height controlled by CSS var */
-      height:var(--details-height);
-      max-height:60vh;
-      min-height:120px; /* safety floor */
-
-      display:flex;
-      flex-direction:column;
-      font-size:16px;
-      line-height:1.5;
-    }
-
-    .details-inner {
-      max-width:960px;
-      margin:0 auto;
-      width:100%;
-      padding:20px 24px 24px;
-      flex:1 1 auto;
-      min-height:0;
-      overflow-y:auto;
-
-      /* invisible scrollbar */
-      scrollbar-width:none;
-      -ms-overflow-style:none;
-    }
-    .details-inner::-webkit-scrollbar {
-      display:none;
-    }
-
-    #details h2 {
-      margin:0 0 6px;
-      font-size:16px;
-      font-weight:600;
-      color:var(--footer-text);
-      line-height:1.3;
-    }
-    #details .meta {
-      font-size:12px;
-      font-weight:500;
-      color:#ccc;
-      margin-bottom:6px;
-      text-transform:capitalize;
-      line-height:1.2;
-    }
-    #details .desc {
-      font-size:13px;
-      color:var(--footer-text);
-      white-space:pre-wrap;
-      line-height:1.5;
-      padding-bottom:25px;
-    }
-
-    /* while dragging, disable text selection for smoothness */
-    .resizing,
-    .resizing * {
-      user-select:none !important;
-      cursor:row-resize !important;
-    }
+    .graph-area {position:relative;flex:1 1 auto;min-height:0;overflow:hidden;z-index:0;}
+    #viz {position:absolute;left:0;right:0;top:0;bottom:0;overflow:hidden;background:transparent;}
+    #footer-resizer {position:absolute;left:0;right:0;height:6px;cursor:row-resize;z-index:30;top:calc(100% - var(--details-height) - 6px);background:rgba(0,0,0,0);}
+    #footer-resizer::before {content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:3px;border-radius:2px;background:#4a4a4a;box-shadow:0 0 4px rgba(0,0,0,.4);}
+    #details {position:absolute;left:0;right:0;bottom:0;z-index:40;background:var(--footer-bg);color:var(--footer-text);border-top:1px solid #4a4a4a;box-shadow:0 -4px 12px rgba(0,0,0,.25);height:var(--details-height);max-height:60vh;min-height:120px;display:flex;flex-direction:column;font-size:16px;line-height:1.5;}
+    .details-inner {max-width:960px;margin:0 auto;width:100%;padding:20px 24px 24px;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;}
+    .details-inner::-webkit-scrollbar {display:none;}
+    #details h2 {margin:0 0 6px;font-size:16px;font-weight:600;color:var(--footer-text);}
+    #details .meta {font-size:12px;font-weight:500;color:#ccc;margin-bottom:6px;text-transform:capitalize;}
+    #details .desc {font-size:13px;color:var(--footer-text);white-space:pre-wrap;padding-bottom:25px;}
+    .resizing,.resizing * {user-select:none !important;cursor:row-resize !important;}
   </style>
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
@@ -306,12 +58,8 @@
       <div class="header-top">
         <h1>Hypomnemata</h1>
       </div>
-
       <div class="header-bottom">
-        <div class="hypo-desc">
-          Hypomnemata (Greek: ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation. They were not merely diaries but spiritual exercises — tools for shaping one’s moral and philosophical life through the active recollection and application of knowledge.
-        </div>
-
+        <div class="hypo-desc">Hypomnemata (Greek: ὑπομνήματα) were personal notebooks or written records used in antiquity as aids to memory, reflection, and ethical self-formation.</div>
         <div class="legend-block">
           <div class="legend">
             <span class="philosophy-icon"><i class="fa-solid fa-brain"></i></span><small>Philosophy</small>
@@ -321,7 +69,6 @@
             <span class="works-icon"><i class="fa-solid fa-book"></i></span><small>Works</small>
             <span class="citation-icon"><i class="fa-solid fa-comment-dots"></i></span><small>Citation</small>
           </div>
-
           <div class="physics-toggle">
             <span>Dynamic graph</span>
             <label class="switch">
@@ -329,17 +76,17 @@
               <span class="slider"></span>
             </label>
           </div>
+          <div class="zoom-control">
+            <label for="zoomSlider">Zoom</label>
+            <input id="zoomSlider" type="range" min="0.3" max="2" step="0.01" value="1" style="width:120px;">
+            <span id="zoomValue">1.00x</span>
+          </div>
         </div>
       </div>
     </header>
-
-    <!-- NEW wrapper for graph + overlay footer -->
     <div class="graph-area">
       <div id="viz"></div>
-
-      <!-- draggable handle now lives above the footer, both absolutely positioned -->
       <div id="footer-resizer"></div>
-
       <section id="details">
         <div class="details-inner">
           <h2 id="details-title">Select a node</h2>
@@ -349,312 +96,47 @@
       </section>
     </div>
   </div>
-
   <script>
   (function(){
     var endpoint = "/api/graph";
-
     var container = document.getElementById("viz");
-    var titleEl   = document.getElementById("details-title");
-    var typeEl    = document.getElementById("details-type");
-    var descEl    = document.getElementById("details-desc");
-    var toggle    = document.getElementById("physicsToggle");
+    var titleEl = document.getElementById("details-title");
+    var typeEl = document.getElementById("details-type");
+    var descEl = document.getElementById("details-desc");
+    var toggle = document.getElementById("physicsToggle");
 
-    // palette map for groups
-    var colors = {
-      PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7",
-      CONCEPT    : "#b8cde2",
-      PRACTICE   : "#f3d9a4",
-      RELATION   : "#d5c7b3",
-      WORKS      : "#d5c7b3"
-    };
+    var colors = {PHILOSOPHY : "#b4c8a8",PRINCIPLE  : "#e8b7b7",CONCEPT: "#b8cde2",PRACTICE: "#f3d9a4",RELATION: "#d5c7b3",WORKS: "#d5c7b3"};
 
-    function getId(o){
-      return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;
-    }
+    function getId(o){return (o && (o.id || o.identity || o.elementId || (o.properties && o.properties.id))) || null;}
+    function getLabel(o){if(o&&o.properties){if(o.properties.title)return o.properties.title;if(o.properties.name)return o.properties.name;}return(o.labels&&o.labels[0])||"Node";}
+    function getDesc(o){var p=o.properties||{};return(p.description&&p.description.trim())?p.description:"No description available.";}
+    function getType(o){return(o.labels&&o.labels[0]?o.labels[0].toLowerCase():"node");}
 
-    function getLabel(o){
-      if (o && o.properties){
-        if (o.properties.title) return o.properties.title;
-        if (o.properties.name)  return o.properties.name;
-      }
-      return (o.labels && o.labels[0]) || "Node";
-    }
+    function buildNode(n){var primary=(n.labels&&n.labels[0])||"Node";var base={id:getId(n),label:getLabel(n),group:primary,_desc:getDesc(n),_type:getType(n)};
+      if(primary==="AUTHOR") base.shape="icon",base.icon={face:"FontAwesome",code:"",size:30,color:"#000"};
+      else if(primary==="PHILOSOPHY") base.shape="icon",base.icon={face:"FontAwesome",code:"",size:35,color:colors[primary]};
+      else if(primary==="PRACTICE") base.shape="icon",base.icon={face:"FontAwesome",code:"",size:35,color:"#e8c670"};
+      else if(primary==="PRINCIPLE") base.shape="icon",base.icon={face:"FontAwesome",code:"",size:30,color:"#e8b7b7"};
+      else if(primary==="CITATION") base.shape="icon",base.icon={face:"FontAwesome",code:"\uf4ad",size:30,color:"#88c3c0"};
+      else if(primary==="WORKS") base.shape="icon",base.icon={face:"FontAwesome",code:"",size:30,color:colors[primary]};
+      else base.shape="dot",base.size=23,base.color={background:colors[primary]||"#d5c7b3",border:"#333"};return base;}
 
-    function getDesc(o){
-      var p = o.properties || {};
-      return (p.description && p.description.trim())
-        ? p.description
-        : "No description available.";
-    }
+    fetch(endpoint+"?limit=1000").then(r=>r.json()).then(d=>{
+      var rows=(d&&d.data&&d.data.values)||[];var nodeMap=new Map(),edgeMap=new Map(),rawNodes=[],rawEdges=[];
+      rows.forEach(r=>{if(r[0])rawNodes.push(r[0]);if(r[2])rawNodes.push(r[2]);if(r[1])rawEdges.push(r[1]);});
+      rawNodes.forEach(n=>{var i=getId(n);if(i&&!nodeMap.has(i))nodeMap.set(i,buildNode(n));});
+      rawEdges.forEach(e=>{var i=getId(e),f=e.startNodeElementId||e.start||e.from,t=e.endNodeElementId||e.end||e.to;if(i&&f&&t&&!edgeMap.has(i))edgeMap.set(i,{id:i,from:f,to:t,arrows:"to",length:260,color:{color:"#d5c7b3"}});});
+      var nodesDS=new vis.DataSet([...nodeMap.values()]);var edgesDS=new vis.DataSet([...edgeMap.values()]);
+      var net=new vis.Network(container,{nodes:nodesDS,edges:edgesDS},{interaction:{hover:true},physics:{enabled:true,solver:"forceAtlas2Based"}});
 
-    function getType(o){
-      return (o.labels && o.labels[0] ? o.labels[0].toLowerCase() : "node");
-    }
+      net.on("click",p=>{if(p.nodes.length>0){var n=nodesDS.get(p.nodes[0]);titleEl.textContent=n.label;typeEl.textContent=n._type;descEl.innerHTML=n._desc;}});
+      toggle.addEventListener("change",()=>net.setOptions({physics:{enabled:toggle.checked}}));
 
-    function isAuthorLabel(primary){
-      return primary && primary.toUpperCase() === "AUTHOR";
-    }
-    function isPhilosophyLabel(primary){
-      return primary && primary.toUpperCase() === "PHILOSOPHY";
-    }
-    function isPracticeLabel(primary){
-      return primary && primary.toUpperCase() === "PRACTICE";
-    }
-    function isPrincipleLabel(primary){
-      return primary && primary.toUpperCase() === "PRINCIPLE";
-    }
-    function isCitationLabel(primary){
-      return primary && primary.toUpperCase() === "CITATION";
-    }
-    function isWorksLabel(primary){
-      return primary && primary.toUpperCase() === "WORKS";
-    }
-
-    function buildNode(n){
-      var primary = (n.labels && n.labels[0]) || "Node";
-
-      var base = {
-        id    : getId(n),
-        label : getLabel(n),
-        group : primary,
-        _desc : getDesc(n),
-        _type : getType(n)
-      };
-
-      if (isAuthorLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#000"
-        };
-      } else if (isPhilosophyLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: colors[primary] || "#b4c8a8"
-        };
-      } else if (isPracticeLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 35,
-          color: "#e8c670"
-        };
-      } else if (isPrincipleLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: "#e8b7b7"
-        };
-      } else if (isCitationLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "\uf4ad",
-          size: 30,
-          color: "#88c3c0"
-        };
-      } else if (isWorksLabel(primary)) {
-        base.shape = "icon";
-        base.icon = {
-          face: "FontAwesome",
-          code: "",
-          size: 30,
-          color: colors[primary] || "#d5c7b3"
-        };
-      } else {
-        base.color = {
-          background: colors[primary] || "#d5c7b3",
-          border: "#333",
-          highlight: { background: "#d4a44b", border: "#3a3a3a" },
-          hover:     { background: "#d4a4 4b", border: "#3a3a3a" }
-        };
-        base.shape = "dot";
-        base.size = 23;
-        base.borderWidth = 2;
-        base.font = { color:"#000", size:16, face:"Inter, system-ui" };
-      }
-
-      return base;
-    }
-
-    fetch(endpoint + "?limit=1000")
-      .then(r => r.json())
-      .then(d => {
-        var rows = (d && d.data && d.data.values) || [];
-
-        var nodeMap = new Map();
-        var edgeMap = new Map();
-        var rawNodes = [];
-        var rawEdges = [];
-
-        rows.forEach(row => {
-          if (row[0]) rawNodes.push(row[0]);
-          if (row[2]) rawNodes.push(row[2]);
-          if (row[1]) rawEdges.push(row[1]);
-        });
-
-        rawNodes.forEach(n => {
-          var i = getId(n);
-          if (i && !nodeMap.has(i)) {
-            nodeMap.set(i, buildNode(n));
-          }
-        });
-
-        rawEdges.forEach(e => {
-          var i = getId(e),
-              f = e.startNodeElementId || e.start || e.from,
-              t = e.endNodeElementId   || e.end   || e.to;
-
-          if (i && f && t && !edgeMap.has(i)) {
-            var lab = e.type
-              ? "<i>" + e.type
-                  .replace(/_/g," ")
-                  .toLowerCase()
-                  .replace(/^\w/, c => c.toUpperCase()) + "</i>"
-              : "";
-
-            edgeMap.set(i, {
-              id: i,
-              from: f,
-              to: t,
-              label: lab,
-              arrows: "to",
-              length: 260,
-              color: {
-                color: "#d5c7b3",
-                highlight: "#d4a44b",
-                hover: "#d4a44b"
-              },
-              font: {
-                multi: "html",
-                face: "Inter",
-                color: "#000"
-              },
-              smooth: false
-            });
-          }
-        });
-
-        var nodesDS = new vis.DataSet([...nodeMap.values()]);
-        var edgesDS = new vis.DataSet([...edgeMap.values()]);
-
-        var net = new vis.Network(
-          container,
-          { nodes: nodesDS, edges: edgesDS },
-          {
-            nodes: {
-              shape: "dot",
-              size: 23,
-              borderWidth: 2,
-              font: { color:"#000", size:16, face:"Inter, system-ui" }
-            },
-            edges: {
-              width: 1.5,
-              color: {
-                color:"#d5c7b3",
-                highlight:"#d4a44b",
-                hover:"#d4a44b"
-              },
-              smooth: false,
-              font: { multi:"html", face:"Inter", color:"#000" }
-            },
-            interaction: { hover:true, tooltipDelay:150 },
-            physics: {
-              enabled: true,
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -30,
-                centralGravity: 0.0005,
-                springLength: 280,
-                springConstant: 0.03,
-                avoidOverlap: 1
-              },
-              stabilization: { iterations: 400 }
-            }
-          }
-        );
-
-        net.on("click", p => {
-          if (p.nodes.length > 0) {
-            var n = nodesDS.get(p.nodes[0]);
-            titleEl.textContent = n.label;
-            typeEl.textContent  = n._type;
-            descEl.innerHTML    = n._desc;
-          }
-        });
-
-        toggle.addEventListener("change", () => {
-          net.setOptions({ physics:{ enabled: toggle.checked } });
-        });
-      });
-
-    /* footer resize logic for overlay footer */
-    (function(){
-      var resizer = document.getElementById("footer-resizer");
-      var root    = document.documentElement;
-      var wrap    = document.querySelector(".wrap");
-
-      var isDragging = false;
-      var startY     = 0;
-      var startH     = 0;
-
-      function pxToNumber(v){
-        return Number(String(v).replace("px","")) || 0;
-      }
-
-      // min height should be whatever we started with (160px), but also not less than 120
-      var baseMinHeight = Math.max(
-        120,
-        pxToNumber(getComputedStyle(root).getPropertyValue("--details-height").trim()) || 160
-      );
-
-      resizer.addEventListener("mousedown", function(e){
-        isDragging = true;
-        startY = e.clientY;
-
-        var current = getComputedStyle(root).getPropertyValue("--details-height").trim();
-        startH = pxToNumber(current) || baseMinHeight;
-
-        wrap.classList.add("resizing");
-        e.preventDefault();
-      });
-
-      window.addEventListener("mousemove", function(e){
-        if(!isDragging) return;
-
-        var dy = e.clientY - startY;
-        // Dragging UP should INCREASE footer height.
-        // Pointer moves up => dy negative => height should grow => subtract dy.
-        var newH = startH - dy;
-
-        var maxH = window.innerHeight * 0.6;
-        if (newH < baseMinHeight) newH = baseMinHeight;
-        if (newH > maxH) newH = maxH;
-
-        root.style.setProperty("--details-height", newH + "px");
-
-        // also move the resizer's top using CSS calc, but that's already tied
-        // to var(--details-height) in CSS, so no extra work
-      });
-
-      window.addEventListener("mouseup", function(){
-        if(isDragging){
-          isDragging = false;
-          wrap.classList.remove("resizing");
-        }
-      });
-    })();
-
+      const zoomSlider=document.getElementById('zoomSlider');
+      const zoomValueLabel=document.getElementById('zoomValue');
+      zoomSlider.addEventListener('input',()=>{const scale=parseFloat(zoomSlider.value);const pos=net.getViewPosition();net.moveTo({position:pos,scale:scale,animation:false});zoomValueLabel.textContent=scale.toFixed(2)+'x';});
+      net.on('zoom',()=>{const scale=net.getScale();zoomSlider.value=scale.toFixed(2);zoomValueLabel.textContent=scale.toFixed(2)+'x';});
+    });
   })();
   </script>
 </body>
