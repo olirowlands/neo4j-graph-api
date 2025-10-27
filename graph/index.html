@@ -18,8 +18,8 @@
       --highlight:#d4a44b;
       --works:#d5c7b3;
 
-      /* starting footer height */
-      --details-height: 160px;
+      /* initial visible footer height */
+      --details-height:160px;
     }
 
     html, body {
@@ -31,11 +31,15 @@
       overflow:hidden;
     }
 
+    /* CHANGED:
+       wrap is full viewport, but we'll manually size header+graph instead of flexing footer */
     .wrap {
+      position:relative;
       height:100vh;
       width:100%;
       display:flex;
       flex-direction:column;
+      overflow:hidden;
     }
 
     header {
@@ -168,25 +172,48 @@
     input:checked + .slider {background-color:var(--highlight);border-color:#3a3a3a;}
     input:checked + .slider:before {transform:translateX(16px);}
 
-    /* graph area flexes to fill leftover space */
-    #viz {
+    /* NEW:
+       graph region fills everything under header.
+       We absolutely position the footer INSIDE this region. */
+    .graph-area {
+      position:relative;
       flex:1 1 auto;
       min-height:0;
-      position:relative;
-      background:transparent;
-      z-index:0;
       overflow:hidden;
-      /* NEW: allow us to lock height cleanly without transitions fighting */
-      transition:none;
+      /* create a stacking context so footer can sit above */
+      z-index:0;
     }
 
-    /* drag handle just above footer */
+    /* vis container fills the graph-area, completely independent of footer height */
+    #viz {
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      bottom:0;
+      overflow:hidden;
+      background:transparent;
+    }
+
+    /* NEW:
+       footer + resizer are absolutely positioned at the bottom of .graph-area
+       and sized using --details-height.
+    */
     #footer-resizer {
-      flex:0 0 auto;
+      position:absolute;
+      left:0;
+      right:0;
+      /* sits just above the footer panel */
       height:6px;
-      background:rgba(0,0,0,0);
       cursor:row-resize;
-      position:relative;
+      z-index:30;
+
+      /* dynamic vertical position:
+         footer top edge = 100% - var(--details-height)
+         resizer sits 6px above that */
+      top:calc(100% - var(--details-height) - 6px);
+
+      background:rgba(0,0,0,0);
     }
     #footer-resizer::before {
       content:"";
@@ -201,18 +228,22 @@
       box-shadow:0 0 4px rgba(0,0,0,.4);
     }
 
-    /* footer panel */
     #details {
-      flex:0 0 auto;
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:40;
+
       background:var(--footer-bg);
       color:var(--footer-text);
       border-top:1px solid #4a4a4a;
       box-shadow:0 -4px 12px rgba(0,0,0,.25);
 
-      /* this height is live-updated via JS */
+      /* dynamic height controlled by CSS var */
       height:var(--details-height);
-      min-height:var(--details-height);
       max-height:60vh;
+      min-height:120px; /* safety floor */
 
       display:flex;
       flex-direction:column;
@@ -233,7 +264,6 @@
       scrollbar-width:none;
       -ms-overflow-style:none;
     }
-
     .details-inner::-webkit-scrollbar {
       display:none;
     }
@@ -302,18 +332,21 @@
       </div>
     </header>
 
-    <div id="viz"></div>
+    <!-- NEW wrapper for graph + overlay footer -->
+    <div class="graph-area">
+      <div id="viz"></div>
 
-    <!-- draggable handle -->
-    <div id="footer-resizer"></div>
+      <!-- draggable handle now lives above the footer, both absolutely positioned -->
+      <div id="footer-resizer"></div>
 
-    <section id="details">
-      <div class="details-inner">
-        <h2 id="details-title">Select a node</h2>
-        <div class="meta" id="details-type">—</div>
-        <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
-      </div>
-    </section>
+      <section id="details">
+        <div class="details-inner">
+          <h2 id="details-title">Select a node</h2>
+          <div class="meta" id="details-type">—</div>
+          <div class="desc" id="details-desc">Click any node in the graph to see its description here.</div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script>
@@ -329,7 +362,7 @@
     // palette map for groups
     var colors = {
       PHILOSOPHY : "#b4c8a8",
-      PRINCIPLE  : "#e8b7b7", // Principle
+      PRINCIPLE  : "#e8b7b7",
       CONCEPT    : "#b8cde2",
       PRACTICE   : "#f3d9a4",
       RELATION   : "#d5c7b3",
@@ -372,7 +405,7 @@
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
     function isCitationLabel(primary){
-      return primary && primary.toUpperCase() === 'CITATION';
+      return primary && primary.toUpperCase() === "CITATION";
     }
     function isWorksLabel(primary){
       return primary && primary.toUpperCase() === "WORKS";
@@ -393,7 +426,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // user
+          code: "",
           size: 30,
           color: "#000"
         };
@@ -401,7 +434,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // brain
+          code: "",
           size: 35,
           color: colors[primary] || "#b4c8a8"
         };
@@ -417,7 +450,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // columns
+          code: "",
           size: 30,
           color: "#e8b7b7"
         };
@@ -425,7 +458,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "\uf4ad", // comment-dots
+          code: "\uf4ad",
           size: 30,
           color: "#88c3c0"
         };
@@ -433,7 +466,7 @@
         base.shape = "icon";
         base.icon = {
           face: "FontAwesome",
-          code: "", // book
+          code: "",
           size: 30,
           color: colors[primary] || "#d5c7b3"
         };
@@ -453,7 +486,6 @@
       return base;
     }
 
-    // fetch graph data
     fetch(endpoint + "?limit=1000")
       .then(r => r.json())
       .then(d => {
@@ -551,7 +583,6 @@
           }
         );
 
-        // click -> populate bottom panel
         net.on("click", p => {
           if (p.nodes.length > 0) {
             var n = nodesDS.get(p.nodes[0]);
@@ -561,51 +592,37 @@
           }
         });
 
-        // physics toggle
         toggle.addEventListener("change", () => {
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
 
-    /* -------- footer resize logic -------- */
+    /* footer resize logic for overlay footer */
     (function(){
       var resizer = document.getElementById("footer-resizer");
       var root    = document.documentElement;
       var wrap    = document.querySelector(".wrap");
-      var viz     = document.getElementById("viz"); // NEW
 
       var isDragging = false;
       var startY     = 0;
       var startH     = 0;
-      var baseVizH   = 0; // NEW
 
       function pxToNumber(v){
         return Number(String(v).replace("px","")) || 0;
       }
 
-      // Capture the starting/minimum height ONCE at load.
-      var baseMinHeight = (function(){
-        var raw = getComputedStyle(root).getPropertyValue("--details-height").trim();
-        var n = pxToNumber(raw);
-        if (!n) {
-          var detEl = document.getElementById("details");
-          n = detEl ? detEl.offsetHeight : 160;
-        }
-        return n;
-      })();
+      // min height should be whatever we started with (160px), but also not less than 120
+      var baseMinHeight = Math.max(
+        120,
+        pxToNumber(getComputedStyle(root).getPropertyValue("--details-height").trim()) || 160
+      );
 
       resizer.addEventListener("mousedown", function(e){
         isDragging = true;
         startY = e.clientY;
 
-        // read current runtime height (which may have changed from dragging)
         var current = getComputedStyle(root).getPropertyValue("--details-height").trim();
-        startH = pxToNumber(current) || document.getElementById("details").offsetHeight;
-
-        // NEW: freeze the graph space so panning/zoom view doesn't jump
-        baseVizH = viz.offsetHeight;
-        viz.style.height = baseVizH + "px";
-        viz.style.flex = "0 0 auto";
+        startH = pxToNumber(current) || baseMinHeight;
 
         wrap.classList.add("resizing");
         e.preventDefault();
@@ -615,29 +632,27 @@
         if(!isDragging) return;
 
         var dy = e.clientY - startY;
-        var newH = startH - dy; // drag up -> bigger footer
+        // Dragging UP should INCREASE footer height.
+        // Pointer moves up => dy negative => height should grow => subtract dy.
+        var newH = startH - dy;
 
         var maxH = window.innerHeight * 0.6;
-
-        // Clamp using the ORIGINAL starting height, not the live height
         if (newH < baseMinHeight) newH = baseMinHeight;
         if (newH > maxH) newH = maxH;
 
         root.style.setProperty("--details-height", newH + "px");
+
+        // also move the resizer's top using CSS calc, but that's already tied
+        // to var(--details-height) in CSS, so no extra work
       });
 
       window.addEventListener("mouseup", function(){
         if(isDragging){
           isDragging = false;
           wrap.classList.remove("resizing");
-
-          // NEW: allow graph to flex again after drag stops
-          viz.style.height = "";
-          viz.style.flex = "1 1 auto";
         }
       });
     })();
-    /* ------------------------------------- */
 
   })();
   </script>
