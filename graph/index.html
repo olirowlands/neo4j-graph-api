@@ -17,7 +17,11 @@
       --footer-text:#f9f8f5;
       --highlight:#d4a44b;
       --works:#d5c7b3;
+
+      /* initial footer height */
+      --details-height: 160px;
     }
+
     html, body {
       height:100%;
       margin:0;
@@ -26,12 +30,14 @@
       font:14px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
       overflow:hidden;
     }
+
     .wrap {
       height:100vh;
       width:100%;
       display:flex;
       flex-direction:column;
     }
+
     header {
       flex:0 0 auto;
       padding:10px 16px 12px;
@@ -162,8 +168,9 @@
     input:checked + .slider {background-color:var(--highlight);border-color:#3a3a3a;}
     input:checked + .slider:before {transform:translateX(16px);}
 
+    /* graph area flexes to fill leftover space */
     #viz {
-      flex:1;
+      flex:1 1 auto;
       min-height:0;
       position:relative;
       background:transparent;
@@ -171,23 +178,53 @@
       overflow:hidden;
     }
 
+    /* drag handle just above footer */
+    #footer-resizer {
+      flex:0 0 auto;
+      height:6px;
+      background:rgba(0,0,0,0);
+      cursor:row-resize;
+      position:relative;
+    }
+    #footer-resizer::before {
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:60px;
+      height:3px;
+      border-radius:2px;
+      background:#4a4a4a;
+      box-shadow:0 0 4px rgba(0,0,0,.4);
+    }
+
+    /* footer panel */
     #details {
       flex:0 0 auto;
       background:var(--footer-bg);
       color:var(--footer-text);
       border-top:1px solid #4a4a4a;
       box-shadow:0 -4px 12px rgba(0,0,0,.25);
-      padding:20px 0 24px;
+
+      /* use variable height */
+      height:var(--details-height);
+      min-height:120px;
+      max-height:60vh;
+
+      display:flex;
+      flex-direction:column;
       font-size:16px;
       line-height:1.5;
     }
+
     .details-inner {
       max-width:960px;
       margin:0 auto;
       width:100%;
-      padding:0 24px;
-      min-height:140px;
-      max-height:30vh;
+      padding:20px 24px 24px;
+      flex:1 1 auto;
+      min-height:0;
       overflow-y:auto;
       scrollbar-width:thin;
     }
@@ -199,6 +236,7 @@
       background-color:rgba(255,255,255,0.3);
       border-radius:3px;
     }
+
     #details h2 {
       margin:0 0 6px;
       font-size:16px;
@@ -219,6 +257,13 @@
       color:var(--footer-text);
       white-space:pre-wrap;
       line-height:1.5;
+    }
+
+    /* while dragging, disable text selection for smoothness */
+    .resizing,
+    .resizing * {
+      user-select:none !important;
+      cursor:row-resize !important;
     }
   </style>
   <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
@@ -257,6 +302,9 @@
     </header>
 
     <div id="viz"></div>
+
+    <!-- draggable handle -->
+    <div id="footer-resizer"></div>
 
     <section id="details">
       <div class="details-inner">
@@ -323,11 +371,10 @@
       // "DOGMA" nodes are now treated visually as "Principle"
       return primary && primary.toUpperCase() === "PRINCIPLE";
     }
-        function isCitationLabel(primary){
+    function isCitationLabel(primary){
       return primary && primary.toUpperCase() === 'CITATION';
     }
-
-function isWorksLabel(primary){
+    function isWorksLabel(primary){
       return primary && primary.toUpperCase() === "WORKS";
     }
 
@@ -526,6 +573,55 @@ function isWorksLabel(primary){
           net.setOptions({ physics:{ enabled: toggle.checked } });
         });
       });
+
+    /* -------- footer resize logic -------- */
+    (function(){
+      var resizer = document.getElementById("footer-resizer");
+      var root    = document.documentElement;
+      var wrap    = document.querySelector(".wrap");
+
+      var isDragging = false;
+      var startY     = 0;
+      var startH     = 0;
+
+      function pxToNumber(v){
+        return Number(String(v).replace("px","")) || 0;
+      }
+
+      resizer.addEventListener("mousedown", function(e){
+        isDragging = true;
+        startY = e.clientY;
+        // current height from CSS var
+        var current = getComputedStyle(root).getPropertyValue("--details-height").trim();
+        startH = pxToNumber(current) || document.getElementById("details").offsetHeight;
+
+        wrap.classList.add("resizing");
+        e.preventDefault();
+      });
+
+      window.addEventListener("mousemove", function(e){
+        if(!isDragging) return;
+
+        var dy = e.clientY - startY;
+        var newH = startH - dy; // drag up -> bigger footer
+
+        // clamp between min 120px and max 60vh
+        var maxH = window.innerHeight * 0.6;
+        if (newH < 120) newH = 120;
+        if (newH > maxH) newH = maxH;
+
+        root.style.setProperty("--details-height", newH + "px");
+      });
+
+      window.addEventListener("mouseup", function(){
+        if(isDragging){
+          isDragging = false;
+          wrap.classList.remove("resizing");
+        }
+      });
+    })();
+    /* ------------------------------------- */
+
   })();
   </script>
 </body>
