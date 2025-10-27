@@ -172,10 +172,9 @@
     }
 
     #details {
-  max-height: 30vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-      flex:0 0 auto;
+      flex:0 0 30vh;
+      max-height:30vh;
+      overflow-y:auto;
       background:var(--footer-bg);
       color:var(--footer-text);
       border-top:1px solid #4a4a4a;
@@ -183,6 +182,7 @@
       padding:20px 0 24px;
       font-size:16px;
       line-height:1.5;
+      scrollbar-width: thin;
     }
     .details-inner {
       max-width:960px;
@@ -518,9 +518,7 @@ function isWorksLabel(primary){
             var n = nodesDS.get(p.nodes[0]);
             titleEl.textContent = n.label;
             typeEl.textContent  = n._type;
-            descEl.innerHTML = n._desc
-  .replace(/\\n/g, "<br>")
-  .replace(/\n/g, "<br>");
+            descEl.textContent  = n._desc;
           }
         });
 
